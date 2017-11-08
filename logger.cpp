@@ -4,6 +4,8 @@
 
 #include "logger.h"
 
+
+int main(int argc, char *argv[]) {
 void Logger::printMessage(string filename, string message){
 	ofstream file;
 	file.open (filename,ofstream::out | ofstream::app);
@@ -20,9 +22,4 @@ const string Logger::currentDateTime() {
     tstruct = *localtime(&now);
     strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
     return buf;
-}
-
-int main(int argc, char *argv[]) {
-	
-
 }
