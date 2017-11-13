@@ -15,13 +15,16 @@ using std::cin;
 
 using std::vector;
 
+struct Route {
+	int src;
+	int dest;
+	int cost;
+};
+
 class Router {
 public:
 	int ownAddr;
-	vector< vector<int> > conTable;
-
-	int getAddr();
-	void setAddr(int addr);
+	vector< Route > conTable;
 };
 
 #endif //LINKSTATE_ROUTER_H

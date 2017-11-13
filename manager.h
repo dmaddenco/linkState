@@ -12,6 +12,7 @@
 using std::cout;
 using std::endl;
 using std::cin;
+using std::cerr;
 
 #include <fstream>
 
@@ -31,8 +32,13 @@ using std::find;
 
 class Manager {
 public:
+	vector<int> uniqRouters;
+	vector<Route> routes;
+	vector<Router> routers;
+
 	void readFile(ifstream &inFile);
-	vector<int> routers;
+	void createRouters();
+	void routerSpinUp();
 };
 
 #endif //LINKSTATE_MANAGER_H
