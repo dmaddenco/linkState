@@ -11,6 +11,7 @@ void Manager::readFile(ifstream &inFile) {
 	while (getline(inFile, line) && routers.size() != numRouters) {
 		vector<string> strs;
 		boost::split(strs,line,boost::is_any_of(" "));
+		Router newRouter;
 		if (find(routers.begin(), routers.end(), stoi(strs[0])) == routers.end()) {
 			routers.push_back(stoi(strs[0]));
 		}

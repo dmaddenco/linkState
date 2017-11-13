@@ -5,6 +5,8 @@
 #ifndef LINKSTATE_MANAGER_H
 #define LINKSTATE_MANAGER_H
 
+#include "router.h"
+
 #include <iostream>
 
 using std::cout;
