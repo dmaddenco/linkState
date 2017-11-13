@@ -52,23 +52,23 @@ void Manager::createRouters() {
 		}
 		routers.push_back(router);
 	}
+//	for (int k = 0; k < routers.size(); ++k) {
+//		for (int i = 0; i < routers[k].conTable.size(); ++i) {
+//			cout << "src: " << routers[k].conTable[i].src << " dest: " << routers[k].conTable[i].dest << " cost: " << routers[k].conTable[i].cost << endl;
+//		}
+//	}
 }
 
 void Manager::routerSpinUp() {
 	cout << "parent PID: " << getpid() << endl;
-	pid_t pid;
-//	for (int i = 0; i < uniqRouters.size(); ++i) {
-//		pid = fork();
-//		if (pid) {
-//			cout << "child PID #" << i << ": " << getpid() << endl;
-//			continue;
-//		} else if (pid == 0) {
-//			break;
-//		} else {
-//			printf("fork error\n");
-//			exit(1);
-//		}
-//	}
+	pid_t childPid;
+	for (int i = 0; i < uniqRouters.size(); ++i) {
+		childPid = fork();
+		if (!childPid) {
+			cout << "child PID: " << getpid() << endl;
+			break;        // Don't give the parent a chance to fork again
+		}
+	}
 }
 
 int main(int argc, char *argv[]) {
