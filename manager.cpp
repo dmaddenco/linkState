@@ -66,7 +66,7 @@ void Manager::routerSpinUp() {
 		childPid = fork();
 		if (!childPid) {
 			cout << "child PID: " << getpid() << endl;
-			break;        // Don't give the parent a chance to fork again
+			break;	//don't let child fork again
 		}
 	}
 }
