@@ -32,13 +32,13 @@ using std::find;
 
 class Manager {
 public:
-	vector<int> uniqRouters;
-	vector<Route> routes;
-	vector<Router> routers;
+	vector<int> uniqRouters;	//used for Router creation
+	vector<Route> routes;	//contains Router struct of (src dest cost)
+	vector<Router> routers;	//contains routers that have established conTables
 
 	void readFile(ifstream &inFile);
-	void createRouters();
-	void routerSpinUp();
+	void createRouters();	//create routers with conTables
+	void routerSpinUp();	//fork processes
 };
 
 #endif //LINKSTATE_MANAGER_H

@@ -4,6 +4,10 @@
 
 #include "manager.h"
 
+/*
+ * Reads in file, creates vector of unique routers,
+ * and vector of Route structs that contain (src dest cost)
+ */
 void Manager::readFile(ifstream &inFile) {
 	string line;
 
@@ -40,6 +44,11 @@ void Manager::readFile(ifstream &inFile) {
 	}
 }
 
+/*
+ * Create routers based on number of unique routers.
+ * Routers will have their own address (ownAddr) and a
+ * vector of Route structs for a connection table (conTable)
+ */
 void Manager::createRouters() {
 	for (int i = 0; i < uniqRouters.size(); ++i) {
 		Router router;
@@ -52,13 +61,19 @@ void Manager::createRouters() {
 		}
 		routers.push_back(router);
 	}
-//	for (int k = 0; k < routers.size(); ++k) {
-//		for (int i = 0; i < routers[k].conTable.size(); ++i) {
-//			cout << "src: " << routers[k].conTable[i].src << " dest: " << routers[k].conTable[i].dest << " cost: " << routers[k].conTable[i].cost << endl;
-//		}
-//	}
+	//For testing purposes
+	/*
+	for (int k = 0; k < routers.size(); ++k) {
+		for (int i = 0; i < routers[k].conTable.size(); ++i) {
+			cout << "src: " << routers[k].conTable[i].src << " dest: " << routers[k].conTable[i].dest << " cost: " << routers[k].conTable[i].cost << endl;
+		}
+	}
+	 */
 }
 
+/*
+ * Fork n number of processes for n routers
+ */
 void Manager::routerSpinUp() {
 	cout << "parent PID: " << getpid() << endl;
 	pid_t childPid;

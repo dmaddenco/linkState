@@ -15,8 +15,8 @@ using std::cin;
 
 using std::vector;
 
-struct Route {
-	int src;
+struct Route {	//will be used for conTable construction
+	int src;	//ownAddr
 	int dest;
 	int cost;
 };
