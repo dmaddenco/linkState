@@ -5,11 +5,14 @@
 #ifndef LINKSTATE_MANAGER_H
 #define LINKSTATE_MANAGER_H
 
+#include "router.h"
+
 #include <iostream>
 
 using std::cout;
 using std::endl;
 using std::cin;
+using std::cerr;
 
 #include <fstream>
 
@@ -29,8 +32,13 @@ using std::find;
 
 class Manager {
 public:
+	vector<int> uniqRouters;	//used for Router creation
+	vector<Route> routes;	//contains Router struct of (src dest cost)
+	vector<Router> routers;	//contains routers that have established conTables
+
 	void readFile(ifstream &inFile);
-	vector<int> routers;
+	void createRouters();	//create routers with conTables
+	void routerSpinUp();	//fork processes
 };
 
 #endif //LINKSTATE_MANAGER_H
