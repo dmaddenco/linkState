@@ -42,6 +42,8 @@ void Manager::readFile(ifstream &inFile) {
 		}
 
 	}
+	
+	createPorts(numRouters);
 }
 
 /*
@@ -77,13 +79,89 @@ void Manager::createRouters() {
 void Manager::routerSpinUp() {
 	cout << "parent PID: " << getpid() << endl;
 	pid_t childPid;
+	int portIndex = 0;
 	for (int i = 0; i < uniqRouters.size(); ++i) {
 		childPid = fork();
 		if (!childPid) {
 			cout << "child PID: " << getpid() << endl;
+			//####
+			// char syscall[100];
+			// char buf[100];
+			// sprintf(buf,"%d",getpid());
+			// strcpy(syscall,"./router ");
+			// strcat(syscall,buf);
+			// system(syscall);
+			
+			//####
+			//instead of comment section im thinking call establishConnection(ports.at(portIndex)); portIndex++;
+			establishConnection(ports.at(portIndex)); 
+			
 			break;	//don't let child fork again
 		}
+		portIndex++;
 	}
+}
+
+void Manager::createPorts(int numRouters) {
+	//create distinct ports for tcp connection with router
+	for(int i =0; i < numRouters; i++){
+		int portNum = 2000 + (i * 100);
+		ports.push_back(portNum);
+	}
+	
+	for(int i=0; i < ports.size(); i++){
+		cout << "ports[" << i << "]: " << ports.at(i) << endl;
+	}
+}
+
+void Manager::establishConnection(int port) {
+	cout << "port: " << port << endl;
+	//create "server" and open on port popped from the ports vector
+	//do the system call with argv[1] being port # and make router connect to the port
+	//signal(SIGINT, closeServSocks);	//needed for catching '^C'
+
+	//sockaddr_in is for socket that a sstone will listen to for incoming connection
+	struct sockaddr_in servAddr;
+	servAddr.sin_family = AF_INET;
+	servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servAddr.sin_port = htons(port);	//PORT is the sstones own port to listen to
+
+	sock_in = socket(PF_INET, SOCK_STREAM, 0);	//incoming socket
+
+	if (sock_in < 0) {
+		perror("socket fail");
+		exit(EXIT_FAILURE);
+	}
+
+	if (bind(sock_in, (struct sockaddr *) &servAddr, sizeof(servAddr)) < 0) {
+		perror("bind failed");
+		exit(EXIT_FAILURE);
+	}
+	
+			char syscall[100];
+			char buf[100];
+			sprintf(buf,"%d",port);
+			strcpy(syscall,"./router ");
+			strcat(syscall,buf);
+			system(syscall);
+
+	if (listen(sock_in, MAXPENDING) < 0) {
+		perror("listen failed");
+		exit(EXIT_FAILURE);
+	}
+
+	//struct hostent *he;	//for getting incoming connections ip address
+	//struct in_addr **addr_list;
+	//char hostname[128];
+
+	//char inIpAddress[INET6_ADDRSTRLEN];	//stores incoming connections ip address
+
+	//gethostname(hostname, sizeof hostname);
+	//he = gethostbyname(hostname);
+	//addr_list = (struct in_addr **) he->h_addr_list;
+
+	//cout << "My Ip Address: " << inet_ntoa(*addr_list[0]) << endl;
+	cout << "Listening to PORT: " << ntohs(servAddr.sin_port) << endl;
 }
 
 int main(int argc, char *argv[]) {
