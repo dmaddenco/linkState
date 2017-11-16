@@ -6,6 +6,7 @@
 #define LINKSTATE_MANAGER_H
 
 #include "router.h"
+#include "logger.h"
 
 #include <iostream>
 
@@ -21,6 +22,7 @@ using std::ifstream;
 #include <string>
 
 using std::string;
+using std::to_string;
 
 #include <vector>
 
@@ -39,6 +41,8 @@ using std::system;
 #include <netdb.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
+#include <stdio.h>
 
 #define MAXPENDING 10
 
@@ -56,6 +60,8 @@ public:
 	void routerSpinUp();	//fork processes
 	void establishConnection(int port); //create tcp connection to router
 	void createPorts(int numRouters);
+	void printMessage(string message);
+	const string currentDateTime();
 	
 };
 
