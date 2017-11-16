@@ -88,8 +88,11 @@ void Manager::routerSpinUp() {
 	int portIndex = 0;
 	for (int i = 0; i < signed(uniqRouters.size()); ++i) {
 		childPid = fork();
+		//cout << "childPid: " << childPid << endl;
+		PIDs.push_back(childPid);
 		if (!childPid) {
 			cout << "child PID: " << getpid() << endl;
+
 			//####
 			// char syscall[100];
 			// char buf[100];
@@ -214,13 +217,30 @@ const string Manager::currentDateTime() {
 	return buf;
 }
 
+void Manager::killProcesses(){
+	for (int i = 0; i < signed(PIDs.size()); ++i) {
+		cout << "PIDs.at(" << i << "): " << PIDs.at(i) << endl;
+			char syscall[100];
+			char buf[100];
+			sprintf(buf,"%d",PIDs.at(i));
+			strcpy(syscall,"kill -9 ");
+			strcat(syscall,buf);
+			system(syscall);
+			printMessage("RUNNING COMMAND: " + string(syscall));
+		
+	}
+}
+
 int main(int argc, char *argv[]) {
 
 
 	Manager manager;
-	manager.printMessage("STARTING MANAGER");
+	manager.printMessage("STARTING MANAGER######################################");
 	ifstream file(argv[1]);
 	manager.readFile(file);
 	manager.createRouters();
 	manager.routerSpinUp();
+	cout << "PID SIZE: " << manager.PIDs.size() << endl;
+	manager.killProcesses();
+	//system("killall manager"); //temporary to kill processes
 }

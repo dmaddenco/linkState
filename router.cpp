@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 	
 	Router router;
 	router.createFileName(argv[1]);
-	router.printMessage("ROUTER STARTED");
+	router.printMessage("STARTING ROUTER###########################################");
 
 	tcpPort = atoi(argv[1]);
 	udpPort = tcpPort + 1000;
