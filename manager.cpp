@@ -9,9 +9,11 @@
  * and vector of Route structs that contain (src dest cost)
  */
 void Manager::readFile(ifstream &inFile) {
+	printMessage("STARTING METHOD: readFile()");
 	string line;
 
 	if (inFile.fail()) {
+		printMessage("Error: Failed to open file.");
 		cerr << "Error: Failed to open file." << endl;
 		exit(1);
 	}
@@ -52,6 +54,8 @@ void Manager::readFile(ifstream &inFile) {
  * vector of Route structs for a connection table (conTable)
  */
 void Manager::createRouters() {
+	printMessage("STARTING METHOD: createRouters()");
+
 	for (int i = 0; i < signed(uniqRouters.size()); ++i) {
 		Router router;
 		int src = uniqRouters[i];
@@ -77,6 +81,8 @@ void Manager::createRouters() {
  * Fork n number of processes for n routers
  */
 void Manager::routerSpinUp() {
+	printMessage("STARTING METHOD: routerSpinUp()");
+
 	cout << "parent PID: " << getpid() << endl;
 	pid_t childPid;
 	int portIndex = 0;
@@ -107,11 +113,14 @@ void Manager::routerSpinUp() {
 			strcpy(syscall,"./router ");
 			strcat(syscall,buf);
 			system(syscall);
+			printMessage("STARTING Router for port " + to_string(ports.at(i)));
 	}
 	
 }
 
 void Manager::createPorts(int numRouters) {
+	printMessage("STARTING METHOD: createPorts()");
+
 	//create distinct ports for tcp connection with router
 	for(int i =0; i < numRouters; i++){
 		int portNum = 2000 + (i * 100);
@@ -124,6 +133,8 @@ void Manager::createPorts(int numRouters) {
 }
 
 void Manager::establishConnection(int port) {
+	printMessage("STARTING METHOD: establishConnection()");
+
 	cout << "port: " << port << endl;
 	//create "server" and open on port popped from the ports vector
 	//do the system call with argv[1] being port # and make router connect to the port
@@ -138,11 +149,13 @@ void Manager::establishConnection(int port) {
 	sock_in = socket(PF_INET, SOCK_STREAM, 0);	//incoming socket
 
 	if (sock_in < 0) {
+		printMessage("socket fail");
 		perror("socket fail");
 		exit(EXIT_FAILURE);
 	}
 
 	if (bind(sock_in, (struct sockaddr *) &servAddr, sizeof(servAddr)) < 0) {
+		printMessage("bind failed");
 		perror("bind failed");
 		exit(EXIT_FAILURE);
 	}
@@ -155,6 +168,7 @@ void Manager::establishConnection(int port) {
 			// system(syscall);
 
 	if (listen(sock_in, MAXPENDING) < 0) {
+		printMessage("listen failed");
 		perror("listen failed");
 		exit(EXIT_FAILURE);
 	}
@@ -171,6 +185,7 @@ void Manager::establishConnection(int port) {
 
 	//cout << "My Ip Address: " << inet_ntoa(*addr_list[0]) << endl;
 	cout << "Listening to PORT: " << ntohs(servAddr.sin_port) << endl;
+	printMessage("Listening to PORT: " + to_string(port));
 	
 	sockaddr_in their_addr;	//for connecting to incoming connections socket
 	socklen_t sin_size = sizeof(their_addr);
@@ -178,7 +193,7 @@ void Manager::establishConnection(int port) {
 		while (1) {
 		sin_size = sizeof their_addr;
 		new_fd = accept(sock_in, (struct sockaddr *) &their_addr, &sin_size);	//socket to recieve on
-		cout << "connection accepted" << endl;
+		//cout << "connection accepted" << endl;
 		if (new_fd == -1) {
 			perror("new socket fail");
 			exit(EXIT_FAILURE);
@@ -201,8 +216,30 @@ void Manager::establishConnection(int port) {
 		}
 }
 
+void Manager::printMessage(string message) {
+	ofstream file;
+	string filename = "manager.out";
+	file.open(filename, ofstream::out | ofstream::app);
+	file << currentDateTime() << ": " << message << "\n";
+	file.close();
+
+}
+
+const string Manager::currentDateTime() {
+//adapted from: https://stackoverflow.com/questions/997946/how-to-get-current-time-and-date-in-c
+	time_t now = time(0);
+	struct tm tstruct;
+	char buf[80];
+	tstruct = *localtime(&now);
+	strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
+	return buf;
+}
+
 int main(int argc, char *argv[]) {
+
+
 	Manager manager;
+	manager.printMessage("STARTING MANAGER");
 	ifstream file(argv[1]);
 	manager.readFile(file);
 	manager.createRouters();
