@@ -4,7 +4,10 @@
 
 #include "router.h"
 
-void Router::client(char* port) {
+int udpPort;
+int tcpPort;
+
+void Router::client(int tcpPort) {
 	printMessage("START METHOD: client()");
 	int clientSock;
 	//int buffSize = 500;
@@ -17,12 +20,10 @@ void Router::client(char* port) {
 		exit(EXIT_FAILURE);
 	}
 
-//	cout << "Client socket created" << endl;
-
 	struct sockaddr_in ServAddr;
 	ServAddr.sin_family = AF_INET;
 	ServAddr.sin_addr.s_addr = INADDR_ANY;//used INADDR_ANY because i think thats local addresses
-	ServAddr.sin_port = htons(atoi(port));
+	ServAddr.sin_port = htons(tcpPort);
 
 	cout << "Connecting to server..." << endl;
 	if (connect(clientSock, (struct sockaddr *) &ServAddr, sizeof(ServAddr)) < 0) {
@@ -31,18 +32,12 @@ void Router::client(char* port) {
 		exit(EXIT_FAILURE);
 	}
 
-	cout << "Connected on port: " <<  port << endl;
-	printMessage("Connected on port: " + string(port));
-	char info[100] = "hello from the router on port: ";
-	strcat(info,port);
-	send(clientSock, &info, sizeof(info), 0);
-//	sstones.erase(sstones.begin() + index);
-//	ConInfo info;
-//	string temp = address;
-//	info.parentPort = AWGET_PORT;
-//	strcpy(info.url, url.c_str());
-//	strcpy(info.sstones, serialize().c_str());
-//	send(clientSock, &info, sizeof(info), 0);
+	cout << "Connected on port: " <<  tcpPort << endl;
+	printMessage("Connected on port: " + to_string(tcpPort));
+
+	char routerInfo[100];
+	strcat(routerInfo, to_string(udpPort).c_str());
+	send(clientSock, &routerInfo, sizeof(routerInfo), 0);	//sends routers UDP port to manager
 }
 
 void Router::printMessage(string message) {
@@ -50,7 +45,6 @@ void Router::printMessage(string message) {
 	file.open(filename, ofstream::out | ofstream::app);
 	file << currentDateTime() << ": " << message << "\n";
 	file.close();
-
 }
 
 const string Router::currentDateTime() {
@@ -72,11 +66,13 @@ void Router::createFileName(char* argv1){
 int main(int argc, char *argv[]) {
 	
 	Router router;
-	//filename = "router";
 	router.createFileName(argv[1]);
 	router.printMessage("ROUTER STARTED");
 
-	router.client(argv[1]);//call client with given port number
+	tcpPort = atoi(argv[1]);
+	udpPort = tcpPort + 1000;
+
+	router.client(tcpPort);//call client with given port number
 
 	
 }

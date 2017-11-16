@@ -29,6 +29,7 @@ using std::vector;
 
 using std::string;
 using std::to_string;
+using std::to_string;
 
 #include <iostream>
 #include <fstream>
@@ -45,10 +46,10 @@ public:
 	int ownAddr;
 	string filename = "router";;
 	vector< Route > conTable;
-	void client(char* port);
 	void printMessage(string message);
 	const string currentDateTime();
 	void createFileName(char* argv1);
+	void client(int tcpPort);
 };
 
 #endif //LINKSTATE_ROUTER_H
