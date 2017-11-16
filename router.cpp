@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 	Router router;
 	//filename = "router";
 	router.createFileName(argv[1]);
-	router.printMessage("ROUTER STARTED");
+	router.printMessage("STARTING ROUTER###########################################");
 
 	router.client(argv[1]);//call client with given port number
 

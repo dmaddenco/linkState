@@ -54,6 +54,7 @@ public:
 	vector<Route> routes;	//contains Router struct of (src dest cost)
 	vector<Router> routers;	//contains routers that have established conTables
 	vector<int> ports;
+	vector<int> PIDs;
 
 	void readFile(ifstream &inFile);
 	void createRouters();	//create routers with conTables
@@ -62,6 +63,7 @@ public:
 	void createPorts(int numRouters);
 	void printMessage(string message);
 	const string currentDateTime();
+	void killProcesses();
 	
 };
 
