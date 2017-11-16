@@ -10,10 +10,20 @@
 using std::cout;
 using std::endl;
 using std::cin;
+using std::cerr;
 
 #include <vector>
 
 using std::vector;
+
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#include <stdio.h>
+#include <string.h>
 
 struct Route {	//will be used for conTable construction
 	int src;	//ownAddr
@@ -25,6 +35,7 @@ class Router {
 public:
 	int ownAddr;
 	vector< Route > conTable;
+	void client(char* port);
 };
 
 #endif //LINKSTATE_ROUTER_H
