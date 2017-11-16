@@ -52,11 +52,11 @@ void Manager::readFile(ifstream &inFile) {
  * vector of Route structs for a connection table (conTable)
  */
 void Manager::createRouters() {
-	for (int i = 0; i < uniqRouters.size(); ++i) {
+	for (int i = 0; i < signed(uniqRouters.size()); ++i) {
 		Router router;
 		int src = uniqRouters[i];
 		router.ownAddr = src;
-		for (int j = 0; j < routes.size(); ++j) {
+		for (int j = 0; j < signed(routes.size()); ++j) {
 			if (routes[j].src == src) {
 				router.conTable.push_back(routes[j]);
 			}
@@ -80,7 +80,7 @@ void Manager::routerSpinUp() {
 	cout << "parent PID: " << getpid() << endl;
 	pid_t childPid;
 	int portIndex = 0;
-	for (int i = 0; i < uniqRouters.size(); ++i) {
+	for (int i = 0; i < signed(uniqRouters.size()); ++i) {
 		childPid = fork();
 		if (!childPid) {
 			cout << "child PID: " << getpid() << endl;
@@ -100,6 +100,15 @@ void Manager::routerSpinUp() {
 		}
 		portIndex++;
 	}
+	for(int i=0; i < signed(ports.size()); i++){
+			char syscall[100];
+			char buf[100];
+			sprintf(buf,"%d",ports.at(i));
+			strcpy(syscall,"./router ");
+			strcat(syscall,buf);
+			system(syscall);
+	}
+	
 }
 
 void Manager::createPorts(int numRouters) {
@@ -109,9 +118,9 @@ void Manager::createPorts(int numRouters) {
 		ports.push_back(portNum);
 	}
 	
-	for(int i=0; i < ports.size(); i++){
-		cout << "ports[" << i << "]: " << ports.at(i) << endl;
-	}
+	// for(int i=0; i < ports.size(); i++){
+		// cout << "ports[" << i << "]: " << ports.at(i) << endl;
+	// }
 }
 
 void Manager::establishConnection(int port) {
@@ -138,12 +147,12 @@ void Manager::establishConnection(int port) {
 		exit(EXIT_FAILURE);
 	}
 	
-			char syscall[100];
-			char buf[100];
-			sprintf(buf,"%d",port);
-			strcpy(syscall,"./router ");
-			strcat(syscall,buf);
-			system(syscall);
+			// char syscall[100];
+			// char buf[100];
+			// sprintf(buf,"%d",port);
+			// strcpy(syscall,"./router ");
+			// strcat(syscall,buf);
+			// system(syscall);
 
 	if (listen(sock_in, MAXPENDING) < 0) {
 		perror("listen failed");
@@ -162,6 +171,34 @@ void Manager::establishConnection(int port) {
 
 	//cout << "My Ip Address: " << inet_ntoa(*addr_list[0]) << endl;
 	cout << "Listening to PORT: " << ntohs(servAddr.sin_port) << endl;
+	
+	sockaddr_in their_addr;	//for connecting to incoming connections socket
+	socklen_t sin_size = sizeof(their_addr);
+	
+		while (1) {
+		sin_size = sizeof their_addr;
+		new_fd = accept(sock_in, (struct sockaddr *) &their_addr, &sin_size);	//socket to recieve on
+		cout << "connection accepted" << endl;
+		if (new_fd == -1) {
+			perror("new socket fail");
+			exit(EXIT_FAILURE);
+		}
+		int numbytes;
+
+
+		// inet_ntop(their_addr.sin_family,
+				  // get_in_addr((struct sockaddr *) &their_addr),
+				  // inIpAddress, sizeof inIpAddress);
+		
+		char packet[100];
+
+		if ((numbytes = recv(new_fd, &packet, sizeof(packet), 0)) == -1) {
+			perror("recv");
+			exit(EXIT_FAILURE);
+		}
+		
+		cout << "message recieved was: " << packet << endl;
+		}
 }
 
 int main(int argc, char *argv[]) {

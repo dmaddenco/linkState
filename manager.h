@@ -45,6 +45,7 @@ using std::system;
 class Manager {
 public:
 	int sock_in;
+	int new_fd;
 	vector<int> uniqRouters;	//used for Router creation
 	vector<Route> routes;	//contains Router struct of (src dest cost)
 	vector<Router> routers;	//contains routers that have established conTables

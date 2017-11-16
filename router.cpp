@@ -30,6 +30,9 @@ void Router::client(char* port) {
 	}
 
 	cout << "Connected on port: " <<  port << endl;
+	char info[100] = "hello from the router on port: ";
+	strcat(info,port);
+	send(clientSock, &info, sizeof(info), 0);
 //	sstones.erase(sstones.begin() + index);
 //	ConInfo info;
 //	string temp = address;
