@@ -45,6 +45,7 @@ using std::system;
 #include <stdio.h>
 
 #define MAXPENDING 10
+#define TCP_PORT 5000
 
 class Manager {
 public:

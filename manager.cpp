@@ -83,42 +83,29 @@ void Manager::createRouters() {
 void Manager::routerSpinUp() {
 	printMessage("STARTING METHOD: routerSpinUp()");
 
-	cout << "parent PID: " << getpid() << endl;
+	printMessage("Parent PID: " + to_string(getpid()));
 	pid_t childPid;
 	int portIndex = 0;
+	int status;
 	for (int i = 0; i < signed(uniqRouters.size()); ++i) {
 		childPid = fork();
-		//cout << "childPid: " << childPid << endl;
 		PIDs.push_back(childPid);
 		if (!childPid) {
 			cout << "child PID: " << getpid() << endl;
-
-			//####
-			// char syscall[100];
-			// char buf[100];
-			// sprintf(buf,"%d",getpid());
-			// strcpy(syscall,"./router ");
-			// strcat(syscall,buf);
-			// system(syscall);
-
-			//####
 			//instead of comment section im thinking call establishConnection(ports.at(portIndex)); portIndex++;
-			establishConnection(ports.at(portIndex));
-
-			break;    //don't let child fork again
+//			establishConnection(ports.at(portIndex));
+			char *argv[1000];
+			argv[0] = strdup("router");
+			argv[1] = (char *) to_string(TCP_PORT).c_str();
+			argv[2] = (char *) to_string(ports[i]).c_str();
+			printMessage("STARTING Router for port " + to_string(ports[i]));
+			execv(argv[0], argv);
+//			break;    //don't let child fork again
+		} else if (childPid > 0) {
+			wait(&status);
 		}
 		portIndex++;
 	}
-	for (int i = 0; i < signed(ports.size()); i++) {
-		char syscall[100];
-		char buf[100];
-		sprintf(buf, "%d", ports.at(i));
-		strcpy(syscall, "./router ");
-		strcat(syscall, buf);
-		system(syscall);
-		printMessage("STARTING Router for port " + to_string(ports.at(i)));
-	}
-
 }
 
 void Manager::createPorts(int numRouters) {
@@ -217,17 +204,17 @@ const string Manager::currentDateTime() {
 	return buf;
 }
 
-void Manager::killProcesses(){
+void Manager::killProcesses() {
 	for (int i = 0; i < signed(PIDs.size()); ++i) {
 		cout << "PIDs.at(" << i << "): " << PIDs.at(i) << endl;
-			char syscall[100];
-			char buf[100];
-			sprintf(buf,"%d",PIDs.at(i));
-			strcpy(syscall,"kill -9 ");
-			strcat(syscall,buf);
-			system(syscall);
-			printMessage("RUNNING COMMAND: " + string(syscall));
-		
+		char syscall[100];
+		char buf[100];
+		sprintf(buf, "%d", PIDs.at(i));
+		strcpy(syscall, "kill -9 ");
+		strcat(syscall, buf);
+		system(syscall);
+		printMessage("RUNNING COMMAND: " + string(syscall));
+
 	}
 }
 

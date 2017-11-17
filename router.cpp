@@ -22,7 +22,7 @@ void Router::client(int tcpPort) {
 
 	struct sockaddr_in ServAddr;
 	ServAddr.sin_family = AF_INET;
-	ServAddr.sin_addr.s_addr = INADDR_ANY;//used INADDR_ANY because i think thats local addresses
+	ServAddr.sin_addr.s_addr = INADDR_ANY;	//used INADDR_ANY because i think thats local addresses
 	ServAddr.sin_port = htons(tcpPort);
 
 	cout << "Connecting to server..." << endl;
@@ -64,15 +64,12 @@ void Router::createFileName(char* argv1){
 }
 
 int main(int argc, char *argv[]) {
-	
 	Router router;
 	router.createFileName(argv[1]);
 	router.printMessage("STARTING ROUTER###########################################");
 
 	tcpPort = atoi(argv[1]);
-	udpPort = tcpPort + 1000;
-
+	udpPort = atoi(argv[2]);
+	cout << "udp: " << argv[2] << endl;
 	router.client(tcpPort);//call client with given port number
-
-	
 }
