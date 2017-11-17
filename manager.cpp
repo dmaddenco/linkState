@@ -59,10 +59,14 @@ void Manager::createRouters() {
 	for (int i = 0; i < signed(uniqRouters.size()); ++i) {
 		Router router;
 		int src = uniqRouters[i];
-		router.ownAddr = src;
 		for (int j = 0; j < signed(routes.size()); ++j) {
 			if (routes[j].src == src) {
-				router.conTable.push_back(routes[j]);
+				for (int k = 0; k < signed(uniqRouters.size()); ++k) {
+					if (routes[j].dest == uniqRouters[k]) {
+						routes[j].destUDP = ports[k];
+						router.conTable.push_back(routes[j]);
+					}
+				}
 			}
 		}
 		routers.push_back(router);
@@ -71,14 +75,18 @@ void Manager::createRouters() {
 	/*
 	for (int k = 0; k < routers.size(); ++k) {
 		for (int i = 0; i < routers[k].conTable.size(); ++i) {
-			cout << "src: " << routers[k].conTable[i].src << " dest: " << routers[k].conTable[i].dest << " cost: " << routers[k].conTable[i].cost << endl;
+			cout << "src: " << routers[k].conTable[i].src
+				 << " dest: " << routers[k].conTable[i].dest
+				 << " cost: " << routers[k].conTable[i].cost
+				 << " destUDP: " << routers[k].conTable[i].destUDP << endl;
 		}
 	}
-	 */
+	*/
 }
 
 /*
- * Fork n number of processes for n routers
+ * Fork n number of processes for n routers.
+ * Execute router executable
  */
 void Manager::routerSpinUp() {
 	printMessage("STARTING METHOD: routerSpinUp()");
@@ -91,14 +99,12 @@ void Manager::routerSpinUp() {
 		childPid = fork();
 		PIDs.push_back(childPid);
 		if (!childPid) {
-			cout << "child PID: " << getpid() << endl;
-			//instead of comment section im thinking call establishConnection(ports.at(portIndex)); portIndex++;
-//			establishConnection(ports.at(portIndex));
+//			cout << "child PID: " << getpid() << endl;
 			char *argv[1000];
-			argv[0] = strdup("router");
-			argv[1] = (char *) to_string(uniqRouters[i]).c_str();
-			argv[2] = (char *) to_string(TCP_PORT).c_str();
-			argv[3] = (char *) to_string(ports[i]).c_str();
+			argv[0] = strdup("router");	//router execution
+			argv[1] = (char *) to_string(uniqRouters[i]).c_str();	//router ownAddr
+			argv[2] = (char *) to_string(TCP_PORT).c_str();	//TCP port for router->manager
+			argv[3] = (char *) to_string(ports[i]).c_str();	//UDP port for router->router
 			printMessage("STARTING Router for port " + to_string(ports[i]));
 			execv(argv[0], argv);
 //			break;    //don't let child fork again
@@ -109,6 +115,10 @@ void Manager::routerSpinUp() {
 	}
 }
 
+/*
+ * Create n UDP port numbers for routers for
+ * router->router communication
+ */
 void Manager::createPorts(int numRouters) {
 	printMessage("STARTING METHOD: createPorts()");
 
@@ -119,9 +129,11 @@ void Manager::createPorts(int numRouters) {
 	}
 }
 
+/*
+ * Create TCP connection that will accept from any address
+ */
 void Manager::establishConnection(int port) {
 	printMessage("STARTING METHOD: establishConnection()");
-	vector<int> udpPorts;
 	cout << "port: " << port << endl;
 	//create "server" and open on port popped from the ports vector
 	//do the system call with argv[1] being port # and make router connect to the port
@@ -176,9 +188,8 @@ void Manager::establishConnection(int port) {
 			exit(EXIT_FAILURE);
 		}
 
+		//currently router is just sending its UDP port
 		cout << "message recieved was: " << packet << endl;
-		udpPorts.push_back(atoi(packet));
-//		cout << udpPorts.size() << endl;
 	}
 }
 
@@ -222,10 +233,14 @@ int main(int argc, char *argv[]) {
 
 	manager.readFile(file);
 	manager.createRouters();
-	thread first(&Manager::establishConnection, &manager, TCP_PORT);
-	thread second(&Manager::routerSpinUp, &manager);
-	first.join();
-	second.join();
+
+	//will first create TCP connection and wait for incomming connections
+	//needed first, so routers have something to connect to
+	thread managerTCPCreate(&Manager::establishConnection, &manager, TCP_PORT);
+	thread managerRouterCreate(&Manager::routerSpinUp, &manager);	//execute n routers
+	managerTCPCreate.join();
+	managerRouterCreate.join();
+
 	cout << "PID SIZE: " << manager.PIDs.size() << endl;
 
 	manager.killProcesses();

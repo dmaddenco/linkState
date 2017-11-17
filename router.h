@@ -43,6 +43,7 @@ struct Route {    //will be used for conTable construction
 	int src;    //ownAddr
 	int dest;
 	int cost;
+	int destUDP;
 };
 
 class Router {
