@@ -55,7 +55,8 @@ void Router::client() {
 	printMessage("Connected on port: " + to_string(tcpPort));
 
 	char routerInfo[100];
-	strcat(routerInfo, to_string(udpPort).c_str());
+//	strcat(routerInfo, to_string(udpPort).c_str());
+	strcpy(routerInfo, to_string(udpPort).c_str());
 	send(tcpSocket, &routerInfo, sizeof(routerInfo), 0);    //sends routers UDP port to manager
 }
 
@@ -84,7 +85,7 @@ void Router::createFileName(char *argv1) {
 
 int main(int argc, char *argv[]) {
 	Router router;
-	router.createFileName(argv[1]);
+	router.createFileName(argv[2]);
 	router.printMessage("STARTING ROUTER###########################################");
 
 	tcpPort = atoi(argv[1]);

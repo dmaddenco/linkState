@@ -181,7 +181,7 @@ void Manager::establishConnection(int port) {
 		}
 
 		cout << "message recieved was: " << packet << endl;
-		udpPorts.push_back(atoi(packet));
+		memset(&packet, 0, sizeof(packet));
 	}
 }
 
