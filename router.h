@@ -35,8 +35,8 @@ using std::to_string;
 #include <fstream>
 #include <cstdlib>
 
-struct Route {	//will be used for conTable construction
-	int src;	//ownAddr
+struct Route {    //will be used for conTable construction
+	int src;    //ownAddr
 	int dest;
 	int cost;
 };
@@ -45,11 +45,15 @@ class Router {
 public:
 	int ownAddr;
 	string filename = "router";;
-	vector< Route > conTable;
+	vector <Route> conTable;
+
 	void printMessage(string message);
+
 	const string currentDateTime();
-	void createFileName(char* argv1);
-	void client(int tcpPort);
+
+	void createFileName(char *argv1);
+
+	void client();
 };
 
 #endif //LINKSTATE_ROUTER_H

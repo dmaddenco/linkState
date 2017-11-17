@@ -219,15 +219,20 @@ void Manager::killProcesses() {
 }
 
 int main(int argc, char *argv[]) {
-
-
 	Manager manager;
+
 	manager.printMessage("STARTING MANAGER######################################");
+
 	ifstream file(argv[1]);
+
 	manager.readFile(file);
 	manager.createRouters();
-	manager.routerSpinUp();
+	thread first(&Manager::establishConnection, &manager, TCP_PORT);
+	thread second(&Manager::routerSpinUp, &manager);
+	first.join();
+	second.join();
 	cout << "PID SIZE: " << manager.PIDs.size() << endl;
+
 	manager.killProcesses();
 	//system("killall manager"); //temporary to kill processes
 }
