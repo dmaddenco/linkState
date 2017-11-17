@@ -96,8 +96,9 @@ void Manager::routerSpinUp() {
 //			establishConnection(ports.at(portIndex));
 			char *argv[1000];
 			argv[0] = strdup("router");
-			argv[1] = (char *) to_string(TCP_PORT).c_str();
-			argv[2] = (char *) to_string(ports[i]).c_str();
+			argv[1] = (char *) to_string(uniqRouters[i]).c_str();
+			argv[2] = (char *) to_string(TCP_PORT).c_str();
+			argv[3] = (char *) to_string(ports[i]).c_str();
 			printMessage("STARTING Router for port " + to_string(ports[i]));
 			execv(argv[0], argv);
 //			break;    //don't let child fork again
@@ -159,6 +160,9 @@ void Manager::establishConnection(int port) {
 	socklen_t sin_size = sizeof(their_addr);
 
 	while (1) {
+		int numbytes;
+		char packet[100];
+		memset(&packet, 0, sizeof(packet));
 		sin_size = sizeof their_addr;
 		new_fd = accept(sock_in, (struct sockaddr *) &their_addr, &sin_size);    //socket to recieve on
 
@@ -167,21 +171,14 @@ void Manager::establishConnection(int port) {
 			exit(EXIT_FAILURE);
 		}
 
-		int numbytes;
-
-		// inet_ntop(their_addr.sin_family,
-		// get_in_addr((struct sockaddr *) &their_addr),
-		// inIpAddress, sizeof inIpAddress);
-
-		char packet[100];
-
 		if ((numbytes = recv(new_fd, &packet, sizeof(packet), 0)) == -1) {
 			perror("recv");
 			exit(EXIT_FAILURE);
 		}
 
 		cout << "message recieved was: " << packet << endl;
-		memset(&packet, 0, sizeof(packet));
+		udpPorts.push_back(atoi(packet));
+//		cout << udpPorts.size() << endl;
 	}
 }
 
@@ -191,7 +188,6 @@ void Manager::printMessage(string message) {
 	file.open(filename, ofstream::out | ofstream::app);
 	file << currentDateTime() << ": " << message << "\n";
 	file.close();
-
 }
 
 const string Manager::currentDateTime() {
@@ -214,7 +210,6 @@ void Manager::killProcesses() {
 		strcat(syscall, buf);
 		system(syscall);
 		printMessage("RUNNING COMMAND: " + string(syscall));
-
 	}
 }
 

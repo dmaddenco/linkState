@@ -35,6 +35,10 @@ using std::to_string;
 #include <fstream>
 #include <cstdlib>
 
+#include <sstream>
+
+using std::stringstream;
+
 struct Route {    //will be used for conTable construction
 	int src;    //ownAddr
 	int dest;

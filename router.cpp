@@ -85,11 +85,16 @@ void Router::createFileName(char *argv1) {
 
 int main(int argc, char *argv[]) {
 	Router router;
-	router.createFileName(argv[2]);
+	router.createFileName(argv[3]);
 	router.printMessage("STARTING ROUTER###########################################");
 
-	tcpPort = atoi(argv[1]);
-	udpPort = atoi(argv[2]);
-	cout << "udp: " << argv[2] << endl;
+	tcpPort = atoi(argv[2]);
+	udpPort = atoi(argv[3]);
+
+	stringstream ss;
+	ss << "ROUTER: " << argv[1];
+	string message = ss.str();
+	router.printMessage(message);
+//	cout << "udp: " << argv[3] << endl;
 	router.client();    //call client with given port number
 }
