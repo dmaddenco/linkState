@@ -92,7 +92,8 @@ int main(int argc, char *argv[]) {
 	udpPort = atoi(argv[3]);
 
 	stringstream ss;
-	ss << "ROUTER: " << argv[1];
+	router.ownAddr = atoi(argv[1]);
+	ss << "ROUTER: " << router.ownAddr;
 	string message = ss.str();
 	router.printMessage(message);
 //	cout << "udp: " << argv[3] << endl;
