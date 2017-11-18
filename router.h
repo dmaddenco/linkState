@@ -29,26 +29,36 @@ using std::vector;
 
 using std::string;
 using std::to_string;
+using std::to_string;
 
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
 
-struct Route {	//will be used for conTable construction
-	int src;	//ownAddr
+#include <sstream>
+
+using std::stringstream;
+
+struct Route {    //will be used for conTable construction
+	int src;    //ownAddr
 	int dest;
 	int cost;
+	int destUDP;
 };
 
 class Router {
 public:
 	int ownAddr;
 	string filename = "router";;
-	vector< Route > conTable;
-	void client(char* port);
+	vector <Route> conTable;
+
 	void printMessage(string message);
+
 	const string currentDateTime();
-	void createFileName(char* argv1);
+
+	void createFileName(char *argv1);
+
+	void client();
 };
 
 #endif //LINKSTATE_ROUTER_H

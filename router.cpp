@@ -4,45 +4,60 @@
 
 #include "router.h"
 
-void Router::client(char* port) {
+int udpPort;
+int tcpPort;
+
+int udpSocket;
+int tcpSocket;
+
+void Router::client() {
 	printMessage("START METHOD: client()");
-	int clientSock;
 	//int buffSize = 500;
 	//char buff[buffSize];
+	printMessage("CREATING TCP SOCKET");
+	tcpSocket = socket(AF_INET, SOCK_STREAM, 0);
 
-	clientSock = socket(AF_INET, SOCK_STREAM, 0);
-	if (clientSock < 0) {
-		printMessage("ERROR CREATING CLIENT SOCKET");
-		cerr << "ERROR CREATING CLIENT SOCKET" << endl;
+	if (tcpSocket < 0) {
+		printMessage("ERROR CREATING TCP SOCKET");
+		cerr << "ERROR CREATING TCP SOCKET" << endl;
 		exit(EXIT_FAILURE);
 	}
 
-//	cout << "Client socket created" << endl;
+	printMessage("TCP SOCKET CREATED");
 
 	struct sockaddr_in ServAddr;
 	ServAddr.sin_family = AF_INET;
-	ServAddr.sin_addr.s_addr = INADDR_ANY;//used INADDR_ANY because i think thats local addresses
-	ServAddr.sin_port = htons(atoi(port));
+	ServAddr.sin_addr.s_addr = INADDR_ANY;    //used INADDR_ANY because i think thats local addresses
+	ServAddr.sin_port = htons(tcpPort);
 
-	cout << "Connecting to server..." << endl;
-	if (connect(clientSock, (struct sockaddr *) &ServAddr, sizeof(ServAddr)) < 0) {
-		cerr << "ERROR IN CONNECT" << endl;
-		close(clientSock);
+	printMessage("CREATING UDP SOCKET");
+	udpSocket = socket(AF_INET, SOCK_DGRAM, 0);
+
+	if (tcpSocket < 0) {
+		printMessage("ERROR CREATING UDP SOCKET");
+		cerr << "ERROR CREATING UDP SOCKET" << endl;
 		exit(EXIT_FAILURE);
 	}
 
-	cout << "Connected on port: " <<  port << endl;
-	printMessage("Connected on port: " + string(port));
-	char info[100] = "hello from the router on port: ";
-	strcat(info,port);
-	send(clientSock, &info, sizeof(info), 0);
-//	sstones.erase(sstones.begin() + index);
-//	ConInfo info;
-//	string temp = address;
-//	info.parentPort = AWGET_PORT;
-//	strcpy(info.url, url.c_str());
-//	strcpy(info.sstones, serialize().c_str());
-//	send(clientSock, &info, sizeof(info), 0);
+	printMessage("UDP SOCKET CREATED");
+
+	cout << "Connecting to server..." << endl;
+	printMessage("CONNECTING TO SERVER THROUGH TCP PORT");
+
+	if (connect(tcpSocket, (struct sockaddr *) &ServAddr, sizeof(ServAddr)) < 0) {
+		printMessage("ERROR IN CONNECTING TO SERVER THROUGH TCP PORT");
+		cerr << "ERROR IN CONNECT" << endl;
+		close(tcpSocket);
+		exit(EXIT_FAILURE);
+	}
+
+	cout << "Connected on port: " << tcpPort << endl;
+	printMessage("Connected on port: " + to_string(tcpPort));
+
+	char routerInfo[100];
+//	strcat(routerInfo, to_string(udpPort).c_str());
+	strcpy(routerInfo, to_string(udpPort).c_str());
+	send(tcpSocket, &routerInfo, sizeof(routerInfo), 0);    //sends routers UDP port to manager
 }
 
 void Router::printMessage(string message) {
@@ -50,7 +65,6 @@ void Router::printMessage(string message) {
 	file.open(filename, ofstream::out | ofstream::app);
 	file << currentDateTime() << ": " << message << "\n";
 	file.close();
-
 }
 
 const string Router::currentDateTime() {
@@ -63,20 +77,25 @@ const string Router::currentDateTime() {
 	return buf;
 }
 
-void Router::createFileName(char* argv1){
+void Router::createFileName(char *argv1) {
 	string temp = string(argv1);
 	filename += temp;
 	filename += ".out";
 }
 
 int main(int argc, char *argv[]) {
-	
 	Router router;
-	//filename = "router";
-	router.createFileName(argv[1]);
+	router.createFileName(argv[3]);
 	router.printMessage("STARTING ROUTER###########################################");
 
-	router.client(argv[1]);//call client with given port number
+	tcpPort = atoi(argv[2]);
+	udpPort = atoi(argv[3]);
 
-	
+	stringstream ss;
+	router.ownAddr = atoi(argv[1]);
+	ss << "ROUTER: " << router.ownAddr;
+	string message = ss.str();
+	router.printMessage(message);
+//	cout << "udp: " << argv[3] << endl;
+	router.client();    //call client with given port number
 }

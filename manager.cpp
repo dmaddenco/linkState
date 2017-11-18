@@ -22,8 +22,8 @@ void Manager::readFile(ifstream &inFile) {
 	int numRouters = stoi(line);
 
 	while (getline(inFile, line) && line != "-1") {
-		vector<string> strs;
-		boost::split(strs,line,boost::is_any_of(" "));
+		vector <string> strs;
+		boost::split(strs, line, boost::is_any_of(" "));
 		Route route;
 
 		int src = stoi(strs[0]);
@@ -44,7 +44,7 @@ void Manager::readFile(ifstream &inFile) {
 		}
 
 	}
-	
+
 	createPorts(numRouters);
 }
 
@@ -59,10 +59,14 @@ void Manager::createRouters() {
 	for (int i = 0; i < signed(uniqRouters.size()); ++i) {
 		Router router;
 		int src = uniqRouters[i];
-		router.ownAddr = src;
 		for (int j = 0; j < signed(routes.size()); ++j) {
 			if (routes[j].src == src) {
-				router.conTable.push_back(routes[j]);
+				for (int k = 0; k < signed(uniqRouters.size()); ++k) {
+					if (routes[j].dest == uniqRouters[k]) {
+						routes[j].destUDP = ports[k];
+						router.conTable.push_back(routes[j]);
+					}
+				}
 			}
 		}
 		routers.push_back(router);
@@ -71,73 +75,65 @@ void Manager::createRouters() {
 	/*
 	for (int k = 0; k < routers.size(); ++k) {
 		for (int i = 0; i < routers[k].conTable.size(); ++i) {
-			cout << "src: " << routers[k].conTable[i].src << " dest: " << routers[k].conTable[i].dest << " cost: " << routers[k].conTable[i].cost << endl;
+			cout << "src: " << routers[k].conTable[i].src
+				 << " dest: " << routers[k].conTable[i].dest
+				 << " cost: " << routers[k].conTable[i].cost
+				 << " destUDP: " << routers[k].conTable[i].destUDP << endl;
 		}
 	}
-	 */
+	*/
 }
 
 /*
- * Fork n number of processes for n routers
+ * Fork n number of processes for n routers.
+ * Execute router executable
  */
 void Manager::routerSpinUp() {
 	printMessage("STARTING METHOD: routerSpinUp()");
 
-	cout << "parent PID: " << getpid() << endl;
+	printMessage("Parent PID: " + to_string(getpid()));
 	pid_t childPid;
 	int portIndex = 0;
+	int status;
 	for (int i = 0; i < signed(uniqRouters.size()); ++i) {
 		childPid = fork();
-		//cout << "childPid: " << childPid << endl;
 		PIDs.push_back(childPid);
 		if (!childPid) {
-			cout << "child PID: " << getpid() << endl;
-
-			//####
-			// char syscall[100];
-			// char buf[100];
-			// sprintf(buf,"%d",getpid());
-			// strcpy(syscall,"./router ");
-			// strcat(syscall,buf);
-			// system(syscall);
-			
-			//####
-			//instead of comment section im thinking call establishConnection(ports.at(portIndex)); portIndex++;
-			establishConnection(ports.at(portIndex)); 
-			
-			break;	//don't let child fork again
+//			cout << "child PID: " << getpid() << endl;
+			char *argv[1000];
+			argv[0] = strdup("router");	//router execution
+			argv[1] = (char *) to_string(uniqRouters[i]).c_str();	//router ownAddr
+			argv[2] = (char *) to_string(TCP_PORT).c_str();	//TCP port for router->manager
+			argv[3] = (char *) to_string(ports[i]).c_str();	//UDP port for router->router
+			printMessage("STARTING Router for port " + to_string(ports[i]));
+			execv(argv[0], argv);
+//			break;    //don't let child fork again
+		} else if (childPid > 0) {
+			wait(&status);
 		}
 		portIndex++;
 	}
-	for(int i=0; i < signed(ports.size()); i++){
-			char syscall[100];
-			char buf[100];
-			sprintf(buf,"%d",ports.at(i));
-			strcpy(syscall,"./router ");
-			strcat(syscall,buf);
-			system(syscall);
-			printMessage("STARTING Router for port " + to_string(ports.at(i)));
-	}
-	
 }
 
+/*
+ * Create n UDP port numbers for routers for
+ * router->router communication
+ */
 void Manager::createPorts(int numRouters) {
 	printMessage("STARTING METHOD: createPorts()");
 
 	//create distinct ports for tcp connection with router
-	for(int i =0; i < numRouters; i++){
+	for (int i = 0; i < numRouters; i++) {
 		int portNum = 2000 + (i * 100);
 		ports.push_back(portNum);
 	}
-	
-	// for(int i=0; i < ports.size(); i++){
-		// cout << "ports[" << i << "]: " << ports.at(i) << endl;
-	// }
 }
 
+/*
+ * Create TCP connection that will accept from any address
+ */
 void Manager::establishConnection(int port) {
 	printMessage("STARTING METHOD: establishConnection()");
-
 	cout << "port: " << port << endl;
 	//create "server" and open on port popped from the ports vector
 	//do the system call with argv[1] being port # and make router connect to the port
@@ -147,9 +143,9 @@ void Manager::establishConnection(int port) {
 	struct sockaddr_in servAddr;
 	servAddr.sin_family = AF_INET;
 	servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servAddr.sin_port = htons(port);	//PORT is the sstones own port to listen to
+	servAddr.sin_port = htons(port);    //PORT is the sstones own port to listen to
 
-	sock_in = socket(PF_INET, SOCK_STREAM, 0);	//incoming socket
+	sock_in = socket(PF_INET, SOCK_STREAM, 0);    //incoming socket
 
 	if (sock_in < 0) {
 		printMessage("socket fail");
@@ -162,13 +158,6 @@ void Manager::establishConnection(int port) {
 		perror("bind failed");
 		exit(EXIT_FAILURE);
 	}
-	
-			// char syscall[100];
-			// char buf[100];
-			// sprintf(buf,"%d",port);
-			// strcpy(syscall,"./router ");
-			// strcat(syscall,buf);
-			// system(syscall);
 
 	if (listen(sock_in, MAXPENDING) < 0) {
 		printMessage("listen failed");
@@ -176,47 +165,32 @@ void Manager::establishConnection(int port) {
 		exit(EXIT_FAILURE);
 	}
 
-	//struct hostent *he;	//for getting incoming connections ip address
-	//struct in_addr **addr_list;
-	//char hostname[128];
-
-	//char inIpAddress[INET6_ADDRSTRLEN];	//stores incoming connections ip address
-
-	//gethostname(hostname, sizeof hostname);
-	//he = gethostbyname(hostname);
-	//addr_list = (struct in_addr **) he->h_addr_list;
-
-	//cout << "My Ip Address: " << inet_ntoa(*addr_list[0]) << endl;
 	cout << "Listening to PORT: " << ntohs(servAddr.sin_port) << endl;
 	printMessage("Listening to PORT: " + to_string(port));
-	
-	sockaddr_in their_addr;	//for connecting to incoming connections socket
+
+	sockaddr_in their_addr;    //for connecting to incoming connections socket
 	socklen_t sin_size = sizeof(their_addr);
-	
-		while (1) {
+
+	while (1) {
+		int numbytes;
+		char packet[100];
+		memset(&packet, 0, sizeof(packet));
 		sin_size = sizeof their_addr;
-		new_fd = accept(sock_in, (struct sockaddr *) &their_addr, &sin_size);	//socket to recieve on
-		//cout << "connection accepted" << endl;
+		new_fd = accept(sock_in, (struct sockaddr *) &their_addr, &sin_size);    //socket to recieve on
+
 		if (new_fd == -1) {
 			perror("new socket fail");
 			exit(EXIT_FAILURE);
 		}
-		int numbytes;
-
-
-		// inet_ntop(their_addr.sin_family,
-				  // get_in_addr((struct sockaddr *) &their_addr),
-				  // inIpAddress, sizeof inIpAddress);
-		
-		char packet[100];
 
 		if ((numbytes = recv(new_fd, &packet, sizeof(packet), 0)) == -1) {
 			perror("recv");
 			exit(EXIT_FAILURE);
 		}
-		
+
+		//currently router is just sending its UDP port
 		cout << "message recieved was: " << packet << endl;
-		}
+	}
 }
 
 void Manager::printMessage(string message) {
@@ -225,7 +199,6 @@ void Manager::printMessage(string message) {
 	file.open(filename, ofstream::out | ofstream::app);
 	file << currentDateTime() << ": " << message << "\n";
 	file.close();
-
 }
 
 const string Manager::currentDateTime() {
@@ -238,30 +211,38 @@ const string Manager::currentDateTime() {
 	return buf;
 }
 
-void Manager::killProcesses(){
+void Manager::killProcesses() {
 	for (int i = 0; i < signed(PIDs.size()); ++i) {
 		cout << "PIDs.at(" << i << "): " << PIDs.at(i) << endl;
-			char syscall[100];
-			char buf[100];
-			sprintf(buf,"%d",PIDs.at(i));
-			strcpy(syscall,"kill -9 ");
-			strcat(syscall,buf);
-			system(syscall);
-			printMessage("RUNNING COMMAND: " + string(syscall));
-		
+		char syscall[100];
+		char buf[100];
+		sprintf(buf, "%d", PIDs.at(i));
+		strcpy(syscall, "kill -9 ");
+		strcat(syscall, buf);
+		system(syscall);
+		printMessage("RUNNING COMMAND: " + string(syscall));
 	}
 }
 
 int main(int argc, char *argv[]) {
-
-
 	Manager manager;
+
 	manager.printMessage("STARTING MANAGER######################################");
+
 	ifstream file(argv[1]);
+
 	manager.readFile(file);
 	manager.createRouters();
-	manager.routerSpinUp();
+
+	//will first create TCP connection and wait for incomming connections
+	//needed first, so routers have something to connect to
+	thread managerTCPCreate(&Manager::establishConnection, &manager, TCP_PORT);
+	thread managerRouterCreate(&Manager::routerSpinUp, &manager);	//execute n routers
+	managerTCPCreate.join();
+	managerRouterCreate.join();
+
 	cout << "PID SIZE: " << manager.PIDs.size() << endl;
+
 	manager.killProcesses();
 	//system("killall manager"); //temporary to kill processes
 }
