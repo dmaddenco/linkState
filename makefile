@@ -1,9 +1,9 @@
 all: link
 
 link: manager.cpp manager.h router.cpp router.h logger.cpp logger.h
-	g++ -I. -Wall -std=c++11 -g router.cpp -o router
-	g++ -I. -Wall -std=c++11 -g manager.cpp -o manager
-	g++ -I. -Wall -std=c++11 -g logger.cpp -o logger
+	g++ -I. -Wall -std=c++11 -pthread -g router.cpp -o router
+	g++ -I. -Wall -std=c++11 -pthread -g manager.cpp -o manager
+	g++ -I. -Wall -std=c++11 -pthread -g logger.cpp -o logger
 router:
 	g++ -I. -Wall -std=c++11 -g router.cpp -o router
 manager:
