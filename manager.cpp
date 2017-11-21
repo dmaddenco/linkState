@@ -90,7 +90,7 @@ void Manager::createRouters() {
  */
 void Manager::routerSpinUp() {
 	printMessage("STARTING METHOD: routerSpinUp()");
-
+    pid_t pid = getpid();
 	printMessage("Parent PID: " + to_string(getpid()));
 	pid_t childPid;
 	int portIndex = 0;
@@ -107,10 +107,10 @@ void Manager::routerSpinUp() {
 			argv[3] = (char *) to_string(ports[i]).c_str();	//UDP port for router->router
 			printMessage("STARTING Router for port " + to_string(ports[i]));
 			execv(argv[0], argv);
-//			break;    //don't let child fork again
+			break;    //don't let child fork again
 		} else if (childPid > 0) {
-			wait(&status);
-		}
+            while (wait(&status) != pid);
+        }
 		portIndex++;
 	}
 }

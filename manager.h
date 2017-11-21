@@ -48,6 +48,9 @@ using std::system;
 
 using std::thread;
 
+#include <sys/types.h>
+#include <sys/wait.h>
+
 #define MAXPENDING 10
 #define TCP_PORT 5000
 
