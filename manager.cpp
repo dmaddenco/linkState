@@ -87,11 +87,11 @@ void Manager::createRouters() {
  */
 void Manager::routerSpinUp() {
 	printMessage("STARTING METHOD: routerSpinUp()");
-    pid_t pid = getpid();
+//    pid_t pid = getpid();
 	printMessage("Parent PID: " + to_string(getpid()));
 	pid_t childPid;
 	int portIndex = 0;
-	int status;
+//	int status;
 	for (int i = 0; i < signed(uniqRouters.size()); ++i) {
 		string table = conTableString(uniqRouters[i], conTable);
 		childPid = fork();
@@ -112,7 +112,7 @@ void Manager::routerSpinUp() {
 			execv(argv[0], argv);
 			break;    //don't let child fork again
 		} else if (childPid > 0) {
-//            while (wait(&status) != pid);	//wait until child executes
+//            wait(&status);	//wait until child executes
         }
 		portIndex++;
 	}
@@ -234,7 +234,7 @@ void Manager::killProcesses() {
 
 string Manager::conTableString(int src, vector <Route> routes) {
 	stringstream ss;
-	for (int i = 0; i < routes.size(); ++i) {
+	for (int i = 0; i < signed(routes.size()); ++i) {
 		if (src == routes[i].src) {
 			ss << routes[i].src << " " << routes[i].dest << " " << routes[i].cost << " " << routes[i].destUDP << ",";
 		}

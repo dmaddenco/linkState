@@ -93,7 +93,8 @@ int main(int argc, char *argv[]) {
 	router.printMessage("STARTING ROUTER###########################################");
 
 	ss << argv[1];
-	ownAddr = stoi(ss.str());
+//	ownAddr = stoi(ss.str());
+	ownAddr = atoi(argv[1]);
 	tcpPort = atoi(argv[2]);
 	udpPort = atoi(argv[3]);
 	cout << "Router: " << ownAddr << " conTable: " << argv[4] << endl;
