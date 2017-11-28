@@ -60,9 +60,10 @@ public:
 	int new_fd;
 	vector<int> uniqRouters;    //used for Router creation
 	vector <Route> routes;    //contains Router struct of (src dest cost)
-	vector <Router> routers;    //contains routers that have established conTables
+//	vector <Router> routers;    //contains routers that have established conTables
 	vector<int> ports;
 	vector<int> PIDs;
+	vector <Route> conTable;
 
 	void readFile(ifstream &inFile);
 
@@ -71,12 +72,12 @@ public:
 	void establishConnection(int port); //create tcp connection to router
 	void createPorts(int numRouters);
 
+	void killProcesses();
+
 	void printMessage(string message);
 
 	const string currentDateTime();
-
-	void killProcesses();
-
+	string conTableString(int src, vector <Route> routes);
 };
 
 #endif //LINKSTATE_MANAGER_H

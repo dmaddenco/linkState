@@ -57,29 +57,26 @@ void Manager::createRouters() {
 	printMessage("STARTING METHOD: createRouters()");
 
 	for (int i = 0; i < signed(uniqRouters.size()); ++i) {
-		Router router;
+//		Router router;
 		int src = uniqRouters[i];
 		for (int j = 0; j < signed(routes.size()); ++j) {
 			if (routes[j].src == src) {
 				for (int k = 0; k < signed(uniqRouters.size()); ++k) {
 					if (routes[j].dest == uniqRouters[k]) {
-						routes[j].destUDP = ports[k];
-						router.conTable.push_back(routes[j]);
+						routes[j].destUDP = ports[i];
+						conTable.push_back(routes[j]);
 					}
 				}
 			}
 		}
-		routers.push_back(router);
 	}
 	//For testing purposes
 	/*
-	for (int k = 0; k < routers.size(); ++k) {
-		for (int i = 0; i < routers[k].conTable.size(); ++i) {
-			cout << "src: " << routers[k].conTable[i].src
-				 << " dest: " << routers[k].conTable[i].dest
-				 << " cost: " << routers[k].conTable[i].cost
-				 << " destUDP: " << routers[k].conTable[i].destUDP << endl;
-		}
+	for (int k = 0; k < signed(conTable.size()); ++k) {
+			cout << "src: " << conTable[k].src
+				 << " dest: " << conTable[k].dest
+				 << " cost: " << conTable[k].cost
+				 << " destUDP: " << conTable[k].destUDP << endl;
 	}
 	*/
 }
@@ -96,20 +93,26 @@ void Manager::routerSpinUp() {
 	int portIndex = 0;
 	int status;
 	for (int i = 0; i < signed(uniqRouters.size()); ++i) {
+		string table = conTableString(uniqRouters[i], conTable);
 		childPid = fork();
 		PIDs.push_back(childPid);
 		if (!childPid) {
 //			cout << "child PID: " << getpid() << endl;
 			char *argv[1000];
+			memset(&argv, 0, sizeof(argv));
 			argv[0] = strdup("router");	//router execution
 			argv[1] = (char *) to_string(uniqRouters[i]).c_str();	//router ownAddr
 			argv[2] = (char *) to_string(TCP_PORT).c_str();	//TCP port for router->manager
 			argv[3] = (char *) to_string(ports[i]).c_str();	//UDP port for router->router
-			printMessage("STARTING Router for port " + to_string(ports[i]));
+			argv[4] = (char *) table.c_str();	//src dest weight udpPort,src dest weight udpPort...
+			stringstream ss;
+			ss << "STARTING Router: " << uniqRouters[i] << " for port " << ports[i];
+			cout << ss.str() << endl;
+			printMessage(ss.str());
 			execv(argv[0], argv);
 			break;    //don't let child fork again
 		} else if (childPid > 0) {
-            while (wait(&status) != pid);
+//            while (wait(&status) != pid);	//wait until child executes
         }
 		portIndex++;
 	}
@@ -139,27 +142,29 @@ void Manager::establishConnection(int port) {
 	//do the system call with argv[1] being port # and make router connect to the port
 	//signal(SIGINT, closeServSocks);	//needed for catching '^C'
 
+	fd_set readfds;
+
 	//sockaddr_in is for socket that a sstone will listen to for incoming connection
 	struct sockaddr_in servAddr;
 	servAddr.sin_family = AF_INET;
 	servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	servAddr.sin_port = htons(port);    //PORT is the sstones own port to listen to
+	int tcpSocket;
+	tcpSocket = socket(PF_INET, SOCK_STREAM, 0);    //incoming socket
 
-	sock_in = socket(PF_INET, SOCK_STREAM, 0);    //incoming socket
-
-	if (sock_in < 0) {
+	if (tcpSocket < 0) {
 		printMessage("socket fail");
 		perror("socket fail");
 		exit(EXIT_FAILURE);
 	}
 
-	if (bind(sock_in, (struct sockaddr *) &servAddr, sizeof(servAddr)) < 0) {
+	if (bind(tcpSocket, (struct sockaddr *) &servAddr, sizeof(servAddr)) < 0) {
 		printMessage("bind failed");
 		perror("bind failed");
 		exit(EXIT_FAILURE);
 	}
 
-	if (listen(sock_in, MAXPENDING) < 0) {
+	if (listen(tcpSocket, MAXPENDING) < 0) {
 		printMessage("listen failed");
 		perror("listen failed");
 		exit(EXIT_FAILURE);
@@ -176,7 +181,10 @@ void Manager::establishConnection(int port) {
 		char packet[100];
 		memset(&packet, 0, sizeof(packet));
 		sin_size = sizeof their_addr;
-		new_fd = accept(sock_in, (struct sockaddr *) &their_addr, &sin_size);    //socket to recieve on
+		new_fd = accept(tcpSocket, (struct sockaddr *) &their_addr, &sin_size);    //socket to recieve on
+
+		FD_ZERO(&readfds);
+		FD_SET(tcpSocket, &readfds);
 
 		if (new_fd == -1) {
 			perror("new socket fail");
@@ -222,6 +230,17 @@ void Manager::killProcesses() {
 		system(syscall);
 		printMessage("RUNNING COMMAND: " + string(syscall));
 	}
+}
+
+string Manager::conTableString(int src, vector <Route> routes) {
+	stringstream ss;
+	for (int i = 0; i < routes.size(); ++i) {
+		if (src == routes[i].src) {
+			ss << routes[i].src << " " << routes[i].dest << " " << routes[i].cost << " " << routes[i].destUDP << ",";
+		}
+	}
+	string table = ss.str();
+	return table.substr(0, table.length()-1);
 }
 
 int main(int argc, char *argv[]) {
