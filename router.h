@@ -48,9 +48,7 @@ struct Route {    //will be used for conTable construction
 
 class Router {
 public:
-	int ownAddr;
-	string filename = "router";;
-	vector <Route> conTable;
+	string filename = "router";
 
 	void printMessage(string message);
 

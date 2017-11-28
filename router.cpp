@@ -4,11 +4,12 @@
 
 #include "router.h"
 
-int udpPort;
+int ownAddr;
 int tcpPort;
+int udpPort;
 
-int udpSocket;
 int tcpSocket;
+int udpSocket;
 
 void Router::client() {
 	printMessage("START METHOD: client()");
@@ -55,9 +56,11 @@ void Router::client() {
 	printMessage("Connected on port: " + to_string(tcpPort));
 
 	char routerInfo[100];
-//	strcat(routerInfo, to_string(udpPort).c_str());
-	strcpy(routerInfo, to_string(udpPort).c_str());
-	send(tcpSocket, &routerInfo, sizeof(routerInfo), 0);    //sends routers UDP port to manager
+	memset(&routerInfo, 0, sizeof(routerInfo));
+	stringstream ss;
+	ss << "Router: " << ownAddr << " ready. UDP Port: " << udpPort;
+	strcpy(routerInfo, ss.str().c_str());
+	send(tcpSocket, &routerInfo, sizeof(routerInfo), 0);    //sends ready msg to manager
 }
 
 void Router::printMessage(string message) {
@@ -84,18 +87,19 @@ void Router::createFileName(char *argv1) {
 }
 
 int main(int argc, char *argv[]) {
+	stringstream ss;
 	Router router;
 	router.createFileName(argv[3]);
 	router.printMessage("STARTING ROUTER###########################################");
 
+	ss << argv[1];
+	ownAddr = stoi(ss.str());
 	tcpPort = atoi(argv[2]);
 	udpPort = atoi(argv[3]);
-
-	stringstream ss;
-	router.ownAddr = atoi(argv[1]);
-	ss << "ROUTER: " << router.ownAddr;
+	cout << "Router: " << ownAddr << " conTable: " << argv[4] << endl;
+	ss.str("");
+	ss << "ROUTER: " << ownAddr;
 	string message = ss.str();
 	router.printMessage(message);
-//	cout << "udp: " << argv[3] << endl;
 	router.client();    //call client with given port number
 }
