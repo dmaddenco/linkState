@@ -11,10 +11,13 @@ int udpPort;
 int tcpSocket;
 int udpSocket;
 
+stringstream ss;
+
 void Router::client() {
 	printMessage("START METHOD: client()");
 	//int buffSize = 500;
 	//char buff[buffSize];
+	ss.str("");
 	printMessage("CREATING TCP SOCKET");
 	tcpSocket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -41,6 +44,9 @@ void Router::client() {
 	}
 
 	printMessage("UDP SOCKET CREATED");
+	ss.str("");
+	ss << "My UDP Port is: " << udpPort;
+	printMessage(ss.str());
 
 	cout << "Connecting to server..." << endl;
 	printMessage("CONNECTING TO SERVER THROUGH TCP PORT");
@@ -53,11 +59,13 @@ void Router::client() {
 	}
 
 	cout << "Connected on port: " << tcpPort << endl;
-	printMessage("Connected on port: " + to_string(tcpPort));
+	ss.str("");
+	ss << "Connected to Manager on TCP Port: " << tcpPort;
+	printMessage(ss.str());
 
 	char routerInfo[100];
 	memset(&routerInfo, 0, sizeof(routerInfo));
-	stringstream ss;
+	ss.str("");
 	ss << "Router: " << ownAddr << " ready. UDP Port: " << udpPort;
 	strcpy(routerInfo, ss.str().c_str());
 	send(tcpSocket, &routerInfo, sizeof(routerInfo), 0);    //sends ready msg to manager
@@ -87,6 +95,7 @@ void Router::createFileName(char *argv1) {
 }
 
 void Router::createConTable(string table) {
+	ss.str("");
 	if (table != "") {
 		vector <string> r;
 		boost::split(r, table, boost::is_any_of(","));
@@ -103,33 +112,31 @@ void Router::createConTable(string table) {
 				conTable.push_back(route);
 			}
 		}
-
+		ss << "My imediate neighbors are: | ";
 		for (int j = 0; j < conTable.size(); ++j) {
-			cout << "src: " << conTable[j].src
+			ss << "src: " << conTable[j].src
 				 << " dest: " << conTable[j].dest
 				 << " cost: " << conTable[j].cost
-				 << " destUDP: " << conTable[j].destUDP << endl;
+				 << " destUDP: " << conTable[j].destUDP << " | ";
 		}
-
 	}
+	printMessage(ss.str());
+	ss.str("");
 }
 
 int main(int argc, char *argv[]) {
-	stringstream ss;
+	ss.str("");
 	Router router;
 	router.createFileName(argv[3]);
 	router.printMessage("STARTING ROUTER###########################################");
 
-	ss << argv[1];
-//	ownAddr = stoi(ss.str());
 	ownAddr = atoi(argv[1]);
 	tcpPort = atoi(argv[2]);
 	udpPort = atoi(argv[3]);
 	router.createConTable(argv[4]);
-	cout << "Router: " << ownAddr << " conTable: " << argv[4] << endl;
-	ss.str("");
-	ss << "ROUTER: " << ownAddr;
-	string message = ss.str();
-	router.printMessage(message);
+
+	ss << "Router: " << ownAddr;
+//	cout << ss << endl;
+	router.printMessage(ss.str());
 	router.client();    //call client with given port number
 }
