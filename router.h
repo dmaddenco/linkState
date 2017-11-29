@@ -74,6 +74,7 @@ public:
 	void compare();
 	void createUdpVector();
 	bool startLinkState(int expectedConTableSize);
+	void sendLSFinish();
 };
 
 #endif //LINKSTATE_ROUTER_H

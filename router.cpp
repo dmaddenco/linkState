@@ -129,11 +129,23 @@ void Router::client() {
 					ss.str("");
 					ss << "Expected conTable size: " << str[1];
 					printMessage(ss.str());
-					startLinkState(stoi(string(str[1])));
+					if (startLinkState(stoi(string(str[1])))) {
+						sendLSFinish();
+					}
 				}
 			}
 		}
 	}
+}
+
+void Router::sendLSFinish() {
+	printMessage("Finished LS, sending FINISH_LS_ACK");
+	char routerInfo[100];
+	memset(&routerInfo, 0, sizeof(routerInfo));
+	stringstream lsFinish;
+	lsFinish << "FINISH_LS_ACK " << ownAddr;
+	strcpy(routerInfo, lsFinish.str().c_str());
+	send(tcpSocket, &routerInfo, sizeof(routerInfo), 0);    //sends ready msg to manager
 }
 
 bool Router::startLinkState(int expectedConTableSize) {
@@ -159,12 +171,12 @@ bool Router::startLinkState(int expectedConTableSize) {
 			   sizeof(neighborUdpSocket));
 	}
 
-	sockaddr_in their_addr;    //for connecting to incoming connections socket
-	socklen_t sin_size = sizeof(their_addr);
+//	sockaddr_in their_addr;    //for connecting to incoming connections socket
+//	socklen_t sin_size = sizeof(their_addr);
 
 	fd_set readfds;    // master file descriptor list
 //	int sd, n, sv;
-	int n, sv, otherRouterUDPsocket;
+	int n, sv;
 
 	while (conTable.size() != expectedConTableSize) {
 		char packet[1000];
@@ -182,14 +194,6 @@ bool Router::startLinkState(int expectedConTableSize) {
 			// one or both of the descriptors have data
 			if (FD_ISSET(udpSocket, &readfds)) {
 				int recvd = -1;
-
-//				if ((otherRouterUDPsocket = accept(udpSocket,(struct sockaddr *) &their_addr, &sin_size))<0){
-//					perror("accept");
-//					exit(1);
-//				}
-
-//				recvd = recv(otherRouterUDPsocket, packet, sizeof(packet), 0);
-//				recvd = recvfrom(udpSocket, packet, sizeof(packet), 0, (struct sockaddr*)&their_addr, &sin_size);
 				recvd = recv(udpSocket, &message, sizeof(message), 0);
 
 				if (recvd < 0) {
@@ -201,10 +205,8 @@ bool Router::startLinkState(int expectedConTableSize) {
 				stringstream ss;
 				ss << "Message recieved was: " << message.table;
 				printMessage(ss.str());
-//				cout << ss.str() << endl;
 				tempconTable = createConTable(message.table);
 				compare();
-//				char msg[1000];
 				int src = message.srcUDP;
 				bool exists = false;
 				for (int j = 0; j < signed(udpPorts.size()); ++j) {
@@ -219,12 +221,9 @@ bool Router::startLinkState(int expectedConTableSize) {
 					neighborUdpSocket.sin_addr.s_addr = INADDR_ANY;    //used INADDR_ANY because i think thats local addresses
 					neighborUdpSocket.sin_port = htons(src);
 					sockets.push_back(neighborUdpSocket);
-					cout << ownAddr << " pushed back: " << src << endl;
+//					cout << ownAddr << " pushed back: " << src << endl;
 				}
 				for (int i = 0; i < signed(sockets.size()); ++i) {
-//					memset(&msg, 0, sizeof(msg));
-//					string table = compressConTable();
-//					strcpy(msg, table.c_str());
 					Message temp;
 					temp.srcUDP = udpPort;
 					strcpy(temp.table, compressConTable().c_str());
@@ -240,7 +239,6 @@ bool Router::startLinkState(int expectedConTableSize) {
 	ss.str("");
 	ss << "Table is now complete.";
 	printMessage(ss.str());
-	cout << "router: " << ownAddr << " is done" << endl;
 	return true;
 }
 
@@ -321,7 +319,7 @@ void Router::compare() {
 			}
 		}
 	}
-	printMessage("done with first loop");
+//	printMessage("done with first loop");
 	for (int i = 0; i < signed(tempconTable.size()); ++i) {
 		if (tempconTable[i].dest != -1) {
 			conTable.push_back(tempconTable[i]);
