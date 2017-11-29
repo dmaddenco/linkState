@@ -174,7 +174,8 @@ void Manager::establishConnection(int port) {
 	socklen_t sin_size = sizeof(their_addr);
 
 	fd_set readfds;	// master file descriptor list
-	int sd, n, sv;
+//	int sd, n, sv;
+	int n, sv;
 
 	while (1) {
 //	while (routerTcpSockets.size() != uniqRouters.size()) {
@@ -222,6 +223,15 @@ void Manager::establishConnection(int port) {
 					ss << "All routers are ready.";
 					printMessage(ss.str());
 					cout << ss.str() << endl;
+					for (int i = 0; i < routerTcpSockets.size(); ++i) {
+						char msg[100];
+						string mess = "START_LS_ACK";
+						ss.str("");
+						ss << "Sending START_LS_ACK";
+						printMessage(ss.str());
+						strcpy(msg, mess.c_str());
+						send(routerTcpSockets[i], &msg, sizeof(msg), 0);
+					}
 				}
 			}
 		}

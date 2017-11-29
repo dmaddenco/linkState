@@ -105,7 +105,7 @@ void Router::client() {
 				}
 
 				stringstream ss;
-				ss << "Message recieved was: " << packet;
+				ss << "Message received was: " << packet;
 				printMessage(ss.str());
 				cout << ss.str() << endl;
 			}
