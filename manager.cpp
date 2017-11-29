@@ -63,7 +63,7 @@ void Manager::createRouters() {
 			if (routes[j].src == src) {
 				for (int k = 0; k < signed(uniqRouters.size()); ++k) {
 					if (routes[j].dest == uniqRouters[k]) {
-						routes[j].destUDP = ports[i];
+						routes[j].destUDP = ports[k];
 						conTable.push_back(routes[j]);
 					}
 				}
