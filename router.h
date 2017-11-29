@@ -5,8 +5,6 @@
 #ifndef LINKSTATE_ROUTER_H
 #define LINKSTATE_ROUTER_H
 
-#include "logger.h"
-
 #include <iostream>
 
 using std::cout;
@@ -32,6 +30,9 @@ using std::to_string;
 using std::to_string;
 
 #include <iostream>
+using std::ofstream;
+using std::cout;
+using std::endl;
 #include <fstream>
 #include <cstdlib>
 
