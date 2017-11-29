@@ -81,7 +81,7 @@ void Router::client() {
 	strcpy(routerInfo, ss.str().c_str());
 	send(tcpSocket, &routerInfo, sizeof(routerInfo), 0);    //sends ready msg to manager
 
-	fd_set readfds;	// master file descriptor list
+	fd_set readfds;    // master file descriptor list
 //	int sd, n, sv;
 	int n, sv;
 
@@ -138,7 +138,7 @@ void Router::client() {
 
 bool Router::startLinkState(int expectedConTableSize) {
 	printMessage("START METHOD: startLinkState()");
-//	vector<sockaddr_in> sockets;
+	vector <sockaddr_in> sockets;
 	for (int i = 0; i < udpPorts.size(); ++i) {
 		char msg[100];
 		memset(&msg, 0, sizeof(msg));
@@ -146,27 +146,32 @@ bool Router::startLinkState(int expectedConTableSize) {
 		neighborUdpSocket.sin_family = AF_INET;
 		neighborUdpSocket.sin_addr.s_addr = INADDR_ANY;    //used INADDR_ANY because i think thats local addresses
 		neighborUdpSocket.sin_port = htons(udpPorts[i]);
-//		sockets.push_back(neighborUdpSocket);
+		sockets.push_back(neighborUdpSocket);
+		Message message;
+		message.srcUDP = udpPort;
+		strcpy(message.table, compressConTable().c_str());
 		string table = compressConTable();
 		strcpy(msg, table.c_str());
 		ss.str("");
 		ss << "Sending connection table to port: " << udpPorts[i];
 		printMessage(ss.str());
-		sendto(udpSocket, &msg, sizeof(msg), 0, (struct sockaddr *)&neighborUdpSocket, sizeof(neighborUdpSocket));
+		sendto(udpSocket, &message, sizeof(message), 0, (struct sockaddr *) &neighborUdpSocket,
+			   sizeof(neighborUdpSocket));
 	}
 
 	sockaddr_in their_addr;    //for connecting to incoming connections socket
 	socklen_t sin_size = sizeof(their_addr);
 
-	fd_set readfds;	// master file descriptor list
+	fd_set readfds;    // master file descriptor list
 //	int sd, n, sv;
 	int n, sv, otherRouterUDPsocket;
 
 	while (conTable.size() != expectedConTableSize) {
-		char packet[100];
+		char packet[1000];
 		memset(&packet, 0, sizeof(packet));
 		FD_ZERO(&readfds);
 		FD_SET(udpSocket, &readfds);
+		Message message;
 
 		n = udpSocket + 1;
 		sv = select(n, &readfds, NULL, NULL, NULL);
@@ -183,7 +188,9 @@ bool Router::startLinkState(int expectedConTableSize) {
 //					exit(1);
 //				}
 
-				recvd = recv(udpSocket, packet, sizeof(packet), 0);
+//				recvd = recv(otherRouterUDPsocket, packet, sizeof(packet), 0);
+//				recvd = recvfrom(udpSocket, packet, sizeof(packet), 0, (struct sockaddr*)&their_addr, &sin_size);
+				recvd = recv(udpSocket, &message, sizeof(message), 0);
 
 				if (recvd < 0) {
 					fprintf(stderr, "Issue with recv \n");
@@ -192,13 +199,48 @@ bool Router::startLinkState(int expectedConTableSize) {
 				}
 
 				stringstream ss;
-				ss << "Message recieved was: " << packet;
+				ss << "Message recieved was: " << message.table;
 				printMessage(ss.str());
-				cout << ss.str() << endl;
-
+//				cout << ss.str() << endl;
+				tempconTable = createConTable(message.table);
+				compare();
+//				char msg[1000];
+				int src = message.srcUDP;
+				bool exists = false;
+				for (int j = 0; j < signed(udpPorts.size()); ++j) {
+					if (src == udpPorts[j]) {
+						exists = true;
+					}
+				}
+				if (!exists) {
+					udpPorts.push_back(src);
+					struct sockaddr_in neighborUdpSocket;
+					neighborUdpSocket.sin_family = AF_INET;
+					neighborUdpSocket.sin_addr.s_addr = INADDR_ANY;    //used INADDR_ANY because i think thats local addresses
+					neighborUdpSocket.sin_port = htons(src);
+					sockets.push_back(neighborUdpSocket);
+					cout << ownAddr << " pushed back: " << src << endl;
+				}
+				for (int i = 0; i < signed(sockets.size()); ++i) {
+//					memset(&msg, 0, sizeof(msg));
+//					string table = compressConTable();
+//					strcpy(msg, table.c_str());
+					Message temp;
+					temp.srcUDP = udpPort;
+					strcpy(temp.table, compressConTable().c_str());
+					ss.str("");
+					ss << "Sending connection table to port: " << udpPorts[i];
+					printMessage(ss.str());
+					sendto(udpSocket, &temp, sizeof(temp), 0, (struct sockaddr *) &sockets[i],
+						   sizeof(sockets[i]));
+				}
 			}
 		}
 	}
+	ss.str("");
+	ss << "Table is now complete.";
+	printMessage(ss.str());
+	cout << "router: " << ownAddr << " is done" << endl;
 	return true;
 }
 
@@ -225,8 +267,8 @@ void Router::createFileName(char *argv1) {
 	filename += ".out";
 }
 
-vector<Route> Router::createConTable(string table) {
-	vector<Route> Con;
+vector <Route> Router::createConTable(string table) {
+	vector <Route> Con;
 	ss.str("");
 	if (table != "") {
 		vector <string> r;
@@ -247,9 +289,9 @@ vector<Route> Router::createConTable(string table) {
 		ss << "My imediate neighbors are: | ";
 		for (int j = 0; j < signed(Con.size()); ++j) {
 			ss << "src: " << Con[j].src
-				 << " dest: " << Con[j].dest
-				 << " cost: " << Con[j].cost
-				 << " destUDP: " << Con[j].destUDP << " | ";
+			   << " dest: " << Con[j].dest
+			   << " cost: " << Con[j].cost
+			   << " destUDP: " << Con[j].destUDP << " | ";
 		}
 	}
 	printMessage(ss.str());
@@ -257,32 +299,45 @@ vector<Route> Router::createConTable(string table) {
 	return Con;
 }
 
-string Router::compressConTable(){ //puts all the Routes in string delimited by ","
+string Router::compressConTable() { //puts all the Routes in string delimited by ","
 	stringstream ss;
 	for (int i = 0; i < signed(conTable.size()); ++i) {
-			ss << conTable[i].src << " " << conTable[i].dest << " " << conTable[i].cost << " " << conTable[i].destUDP << ",";
+		ss << conTable[i].src << " " << conTable[i].dest << " " << conTable[i].cost << " " << conTable[i].destUDP
+		   << ",";
 	}
 	string table = ss.str();
-	return table.substr(0, table.length()-1);
+	return table.substr(0, table.length() - 1);
 }
 
-void Router::compare(){
-
+void Router::compare() {
+	printMessage("START METHOD: compare()");
 	for (int i = 0; i < signed(tempconTable.size()); ++i) {
 		for (int j = 0; j < signed(conTable.size()); ++j) {
-			if (tempconTable[i].src == conTable[j].src){
-				if (tempconTable[i].dest == conTable[j].dest){
-					tempconTable.erase(tempconTable.begin() + i);
+			if (tempconTable[i].src == conTable[j].src) {
+				if (tempconTable[i].dest == conTable[j].dest) {
+//					tempconTable.erase(tempconTable.begin() + i);
+					tempconTable[i].dest = -1;
 				}
 			}
 		}
 	}
+	printMessage("done with first loop");
 	for (int i = 0; i < signed(tempconTable.size()); ++i) {
-		conTable.push_back(tempconTable[i]);
+		if (tempconTable[i].dest != -1) {
+			conTable.push_back(tempconTable[i]);
+		}
 	}
 	tempconTable.clear();
-	
-
+	printMessage("Connection Table Updated");
+	ss.str("");
+	ss << "Table: ";
+	for (int j = 0; j < signed(conTable.size()); ++j) {
+		ss << "src: " << conTable[j].src
+		   << " dest: " << conTable[j].dest
+		   << " cost: " << conTable[j].cost
+		   << " destUDP: " << conTable[j].destUDP << " | ";
+	}
+	printMessage(ss.str());
 }
 
 void Router::createUdpVector() {

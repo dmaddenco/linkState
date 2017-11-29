@@ -50,6 +50,11 @@ struct Route {    //will be used for conTable construction
 	int destUDP;
 };
 
+struct Message {
+	char table[1000];
+	int srcUDP;
+};
+
 class Router {
 public:
 	vector <Route> conTable;
