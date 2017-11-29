@@ -63,6 +63,7 @@ public:
 	vector<int> ports;
 	vector<int> PIDs;
 	vector <Route> conTable;
+	vector <int> routerTcpSockets;
 
 	void readFile(ifstream &inFile);
 

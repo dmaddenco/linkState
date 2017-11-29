@@ -140,18 +140,13 @@ void Manager::createPorts(int numRouters) {
 void Manager::establishConnection(int port) {
 	printMessage("STARTING METHOD: establishConnection()");
 	cout << "port: " << port << endl;
-	//create "server" and open on port popped from the ports vector
-	//do the system call with argv[1] being port # and make router connect to the port
-	//signal(SIGINT, closeServSocks);	//needed for catching '^C'
-
-	fd_set readfds;
 
 	//sockaddr_in is for socket that a sstone will listen to for incoming connection
 	struct sockaddr_in servAddr;
 	servAddr.sin_family = AF_INET;
 	servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	servAddr.sin_port = htons(port);    //PORT is the sstones own port to listen to
-	int tcpSocket;
+	int tcpSocket, routerTCPsocket;
 	tcpSocket = socket(PF_INET, SOCK_STREAM, 0);    //incoming socket
 
 	if (tcpSocket < 0) {
@@ -178,28 +173,70 @@ void Manager::establishConnection(int port) {
 	sockaddr_in their_addr;    //for connecting to incoming connections socket
 	socklen_t sin_size = sizeof(their_addr);
 
+	fd_set readfds;	// master file descriptor list
+	int sd, n, sv;
+
 	while (1) {
-		int numbytes;
+//	while (routerTcpSockets.size() != uniqRouters.size()) {
+//		int numbytes;
 		char packet[100];
 		memset(&packet, 0, sizeof(packet));
-		sin_size = sizeof their_addr;
-		new_fd = accept(tcpSocket, (struct sockaddr *) &their_addr, &sin_size);    //socket to recieve on
+
+//		sin_size = sizeof their_addr;
+//		new_fd = accept(tcpSocket, (struct sockaddr *) &their_addr, &sin_size);    //socket to recieve on
 
 		FD_ZERO(&readfds);
 		FD_SET(tcpSocket, &readfds);
 
-		if (new_fd == -1) {
-			perror("new socket fail");
-			exit(EXIT_FAILURE);
+		n = tcpSocket + 1;
+		sv = select(n, &readfds, NULL, NULL, NULL);
+
+		if (sv == -1) {
+			perror("select");
+		} else {
+			// one or both of the descriptors have data
+			if (FD_ISSET(tcpSocket, &readfds)) {
+				int recvd = -1;
+
+				if ((routerTCPsocket = accept(tcpSocket,(struct sockaddr *) &their_addr, &sin_size))<0){
+					perror("accept");
+					exit(1);
+				}
+
+				recvd = recv(routerTCPsocket, packet, sizeof(packet), 0);
+
+				if (recvd < 0) {
+					fprintf(stderr, "Issue with recv \n");
+					printf("errno %d", errno);
+					exit(EXIT_FAILURE);
+				}
+
+				stringstream ss;
+				ss << "Message recieved was: " << packet;
+				printMessage(ss.str());
+				cout << ss.str() << endl;
+				routerTcpSockets.push_back(routerTCPsocket);
+
+				if (routerTcpSockets.size() == uniqRouters.size()) {
+					ss.str("");
+					ss << "All routers are ready.";
+					printMessage(ss.str());
+					cout << ss.str() << endl;
+				}
+			}
 		}
 
-		if ((numbytes = recv(new_fd, &packet, sizeof(packet), 0)) == -1) {
-			perror("recv");
-			exit(EXIT_FAILURE);
-		}
+//		if (new_fd == -1) {
+//			perror("new socket fail");
+//			exit(EXIT_FAILURE);
+//		}
+//
+//		if ((numbytes = recv(new_fd, &packet, sizeof(packet), 0)) == -1) {
+//			perror("recv");
+//			exit(EXIT_FAILURE);
+//		}
 
-		//currently router is just sending its UDP port
-		cout << "message recieved was: " << packet << endl;
+//		cout << "message recieved was: " << packet << endl;
 	}
 }
 
