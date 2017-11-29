@@ -174,7 +174,8 @@ void Manager::establishConnection(int port) {
 	socklen_t sin_size = sizeof(their_addr);
 
 	fd_set readfds;	// master file descriptor list
-	int sd, n, sv;
+//	int sd, n, sv;
+	int n, sv;
 
 	while (1) {
 //	while (routerTcpSockets.size() != uniqRouters.size()) {
@@ -222,21 +223,60 @@ void Manager::establishConnection(int port) {
 					ss << "All routers are ready.";
 					printMessage(ss.str());
 					cout << ss.str() << endl;
+					for (int i = 0; i < routerTcpSockets.size(); ++i) {
+						char msg[100];
+						ss.str("");
+						ss << "Sending START_LS_ACK";
+						printMessage(ss.str());
+						ss.str("");
+						ss << "START_LS_ACK " << conTable.size();
+						strcpy(msg, ss.str().c_str());
+						send(routerTcpSockets[i], &msg, sizeof(msg), 0);
+					}
+					bool lsDone = false;
+					vector<int> responses;
+//					while (routerTcpSockets.size() == uniqRouters.size()) {
+					/*
+					 * This while loop will loop over all routerTcpSockets that were created above.
+					 * Once a response has been heard from all unique routers, the while loop exits.
+					 */
+					while (!lsDone) {
+						for (int i = 0; i < signed(routerTcpSockets.size()); ++i) {
+							memset(&packet, 0, sizeof(packet));
+							recvd = recv(routerTcpSockets[i], packet, sizeof(packet), 0);
+
+							if (recvd < 0) {
+								fprintf(stderr, "Issue with recv \n");
+								printf("errno %d", errno);
+								exit(EXIT_FAILURE);
+							}
+
+							vector <string> r;
+							boost::split(r, packet, boost::is_any_of(" "));
+
+							stringstream ss;
+							ss << "Message recieved was: " << r[0] << " from Router: " << r[1];
+							printMessage(ss.str());
+							cout << ss.str() << endl;
+							bool contains = false;
+							int router = stoi(r[1]);
+							for (int j = 0; j < signed(responses.size()); ++j) {
+								if (router == responses[j]) {
+									contains = true;
+								}
+							}
+							if (!contains) {
+								responses.push_back(router);
+							}
+							if (responses.size() == uniqRouters.size()) {
+								printMessage("All routers finished LS");
+								lsDone = true;
+							}
+						}
+					}
 				}
 			}
 		}
-
-//		if (new_fd == -1) {
-//			perror("new socket fail");
-//			exit(EXIT_FAILURE);
-//		}
-//
-//		if ((numbytes = recv(new_fd, &packet, sizeof(packet), 0)) == -1) {
-//			perror("recv");
-//			exit(EXIT_FAILURE);
-//		}
-
-//		cout << "message recieved was: " << packet << endl;
 	}
 }
 
