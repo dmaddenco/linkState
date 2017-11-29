@@ -86,6 +86,32 @@ void Router::createFileName(char *argv1) {
 	filename += ".out";
 }
 
+void Router::createConTable(string table) {
+	vector <string> r;
+	boost::split(r, table, boost::is_any_of(","));
+	Route route;
+	for (int i = 0; i < signed(r.size()); i++) {
+		vector <string> strs;
+		string line = r[i];
+		boost::split(strs, line, boost::is_any_of(" "));
+		for (int j = 0; j < signed(strs.size()); j+=4) {
+			route.src = stoi(strs[0]);
+			route.dest = stoi(strs[1]);
+			route.cost = stoi(strs[2]);
+			route.destUDP = stoi(strs[3]);
+			conTable.push_back(route);
+		}
+	}
+	/*
+	for (int j = 0; j < conTable.size(); ++j) {
+		cout << "src: " << conTable[j].src
+			 << " dest: " << conTable[j].dest
+			 << " cost: " << conTable[j].cost
+			 << " destUDP: " << conTable[j].destUDP << endl;
+	}
+	*/
+}
+
 int main(int argc, char *argv[]) {
 	stringstream ss;
 	Router router;
@@ -97,6 +123,7 @@ int main(int argc, char *argv[]) {
 	ownAddr = atoi(argv[1]);
 	tcpPort = atoi(argv[2]);
 	udpPort = atoi(argv[3]);
+	router.createConTable(argv[4]);
 	cout << "Router: " << ownAddr << " conTable: " << argv[4] << endl;
 	ss.str("");
 	ss << "ROUTER: " << ownAddr;

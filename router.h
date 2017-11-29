@@ -37,6 +37,9 @@ using std::to_string;
 
 #include <sstream>
 
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+
 using std::stringstream;
 
 struct Route {    //will be used for conTable construction
@@ -48,6 +51,7 @@ struct Route {    //will be used for conTable construction
 
 class Router {
 public:
+	vector <Route> conTable;
 	string filename = "router";
 
 	void printMessage(string message);
@@ -57,6 +61,7 @@ public:
 	void createFileName(char *argv1);
 
 	void client();
+	void createConTable(string table);
 };
 
 #endif //LINKSTATE_ROUTER_H
