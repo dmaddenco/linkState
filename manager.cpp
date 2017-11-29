@@ -236,6 +236,10 @@ void Manager::establishConnection(int port) {
 					bool lsDone = false;
 					vector<int> responses;
 //					while (routerTcpSockets.size() == uniqRouters.size()) {
+					/*
+					 * This while loop will loop over all routerTcpSockets that were created above.
+					 * Once a response has been heard from all unique routers, the while loop exits.
+					 */
 					while (!lsDone) {
 						for (int i = 0; i < signed(routerTcpSockets.size()); ++i) {
 							memset(&packet, 0, sizeof(packet));
