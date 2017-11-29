@@ -48,6 +48,17 @@ void Router::client() {
 	ss << "My UDP Port is: " << udpPort;
 	printMessage(ss.str());
 
+	sockaddr_in ServAddrUDP;
+	ServAddrUDP.sin_family = AF_INET;
+	ServAddrUDP.sin_addr.s_addr = htonl(INADDR_ANY);
+	ServAddrUDP.sin_port = htons(udpPort);
+
+	if (bind(udpSocket, (struct sockaddr *) &ServAddrUDP, sizeof(ServAddrUDP)) < 0) {
+		printMessage("bind failed");
+		perror("bind failed");
+		exit(EXIT_FAILURE);
+	}
+
 	cout << "Connecting to server..." << endl;
 	printMessage("CONNECTING TO SERVER THROUGH TCP PORT");
 
@@ -108,14 +119,87 @@ void Router::client() {
 				ss << "Message received was: " << packet;
 				printMessage(ss.str());
 //				cout << ss.str() << endl;
-				if (string(packet).compare("START_LS_ACK") == 0) {
+				string msg = packet;
+				vector <string> str;
+				boost::split(str, msg, boost::is_any_of(" "));
+				if (str[0].compare("START_LS_ACK") == 0) {
 					ss.str("");
-					ss << "Starting LS Protocol" << endl;
+					ss << "Starting LS Protocol";
 					printMessage(ss.str());
+					ss.str("");
+					ss << "Expected conTable size: " << str[1];
+					printMessage(ss.str());
+					startLinkState(stoi(string(str[1])));
 				}
 			}
 		}
 	}
+}
+
+bool Router::startLinkState(int expectedConTableSize) {
+	printMessage("START METHOD: startLinkState()");
+//	vector<sockaddr_in> sockets;
+	for (int i = 0; i < udpPorts.size(); ++i) {
+		char msg[100];
+		memset(&msg, 0, sizeof(msg));
+		struct sockaddr_in neighborUdpSocket;
+		neighborUdpSocket.sin_family = AF_INET;
+		neighborUdpSocket.sin_addr.s_addr = INADDR_ANY;    //used INADDR_ANY because i think thats local addresses
+		neighborUdpSocket.sin_port = htons(udpPorts[i]);
+//		sockets.push_back(neighborUdpSocket);
+		string table = compressConTable();
+		strcpy(msg, table.c_str());
+		ss.str("");
+		ss << "Sending connection table to port: " << udpPorts[i];
+		printMessage(ss.str());
+		sendto(udpSocket, &msg, sizeof(msg), 0, (struct sockaddr *)&neighborUdpSocket, sizeof(neighborUdpSocket));
+	}
+
+	sockaddr_in their_addr;    //for connecting to incoming connections socket
+	socklen_t sin_size = sizeof(their_addr);
+
+	fd_set readfds;	// master file descriptor list
+//	int sd, n, sv;
+	int n, sv, otherRouterUDPsocket;
+
+	while (conTable.size() != expectedConTableSize) {
+		char packet[100];
+		memset(&packet, 0, sizeof(packet));
+		FD_ZERO(&readfds);
+		FD_SET(udpSocket, &readfds);
+
+		n = udpSocket + 1;
+		sv = select(n, &readfds, NULL, NULL, NULL);
+
+		if (sv == -1) {
+			perror("select");
+		} else {
+			// one or both of the descriptors have data
+			if (FD_ISSET(udpSocket, &readfds)) {
+				int recvd = -1;
+
+//				if ((otherRouterUDPsocket = accept(udpSocket,(struct sockaddr *) &their_addr, &sin_size))<0){
+//					perror("accept");
+//					exit(1);
+//				}
+
+				recvd = recv(udpSocket, packet, sizeof(packet), 0);
+
+				if (recvd < 0) {
+					fprintf(stderr, "Issue with recv \n");
+					printf("errno %d", errno);
+					exit(EXIT_FAILURE);
+				}
+
+				stringstream ss;
+				ss << "Message recieved was: " << packet;
+				printMessage(ss.str());
+				cout << ss.str() << endl;
+
+			}
+		}
+	}
+	return true;
 }
 
 void Router::printMessage(string message) {

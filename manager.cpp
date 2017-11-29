@@ -225,11 +225,12 @@ void Manager::establishConnection(int port) {
 					cout << ss.str() << endl;
 					for (int i = 0; i < routerTcpSockets.size(); ++i) {
 						char msg[100];
-						string mess = "START_LS_ACK";
 						ss.str("");
 						ss << "Sending START_LS_ACK";
 						printMessage(ss.str());
-						strcpy(msg, mess.c_str());
+						ss.str("");
+						ss << "START_LS_ACK " << conTable.size();
+						strcpy(msg, ss.str().c_str());
 						send(routerTcpSockets[i], &msg, sizeof(msg), 0);
 					}
 				}

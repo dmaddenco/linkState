@@ -68,6 +68,7 @@ public:
 	string compressConTable();
 	void compare();
 	void createUdpVector();
+	bool startLinkState(int expectedConTableSize);
 };
 
 #endif //LINKSTATE_ROUTER_H
