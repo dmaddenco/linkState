@@ -54,6 +54,7 @@ class Router {
 public:
 	vector <Route> conTable;
 	vector <Route> tempconTable;
+	vector <int> udpPorts;
 	string filename = "router";
 
 	void printMessage(string message);
@@ -66,6 +67,7 @@ public:
 	vector<Route> createConTable(string table);
 	string compressConTable();
 	void compare();
+	void createUdpVector();
 };
 
 #endif //LINKSTATE_ROUTER_H

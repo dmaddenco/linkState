@@ -107,7 +107,12 @@ void Router::client() {
 				stringstream ss;
 				ss << "Message received was: " << packet;
 				printMessage(ss.str());
-				cout << ss.str() << endl;
+//				cout << ss.str() << endl;
+				if (string(packet).compare("START_LS_ACK") == 0) {
+					ss.str("");
+					ss << "Starting LS Protocol" << endl;
+					printMessage(ss.str());
+				}
 			}
 		}
 	}
@@ -156,7 +161,7 @@ vector<Route> Router::createConTable(string table) {
 			}
 		}
 		ss << "My imediate neighbors are: | ";
-		for (int j = 0; j < Con.size(); ++j) {
+		for (int j = 0; j < signed(Con.size()); ++j) {
 			ss << "src: " << Con[j].src
 				 << " dest: " << Con[j].dest
 				 << " cost: " << Con[j].cost
@@ -196,6 +201,19 @@ void Router::compare(){
 
 }
 
+void Router::createUdpVector() {
+	ss.str("");
+	ss << "Creating vector of UDP ports";
+	printMessage(ss.str());
+	for (int i = 0; i < signed(conTable.size()); ++i) {
+		udpPorts.push_back(conTable[i].destUDP);
+	}
+	ss.str("");
+	ss << "UDP port vector size: " << udpPorts.size();
+	printMessage(ss.str());
+	ss.str("");
+}
+
 int main(int argc, char *argv[]) {
 	ss.str("");
 	Router router;
@@ -206,7 +224,7 @@ int main(int argc, char *argv[]) {
 	tcpPort = atoi(argv[2]);
 	udpPort = atoi(argv[3]);
 	router.conTable = router.createConTable(argv[4]);
-
+	router.createUdpVector();
 	ss << "Router: " << ownAddr;
 //	cout << ss << endl;
 	router.printMessage(ss.str());
