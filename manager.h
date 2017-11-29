@@ -6,7 +6,6 @@
 #define LINKSTATE_MANAGER_H
 
 #include "router.h"
-#include "logger.h"
 
 #include <iostream>
 
