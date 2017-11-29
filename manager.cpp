@@ -70,15 +70,17 @@ void Manager::createRouters() {
 			}
 		}
 	}
-	//For testing purposes
-	/*
+	printMessage("Current Connection Table:");
 	for (int k = 0; k < signed(conTable.size()); ++k) {
-			cout << "src: " << conTable[k].src
+			stringstream ss;
+			ss << "src: " << conTable[k].src
 				 << " dest: " << conTable[k].dest
 				 << " cost: " << conTable[k].cost
-				 << " destUDP: " << conTable[k].destUDP << endl;
+				 << " destUDP: " << conTable[k].destUDP;
+	//		cout << ss.str() << endl; //For testing purposes
+			printMessage(ss.str());
+
 	}
-	*/
 }
 
 /*
