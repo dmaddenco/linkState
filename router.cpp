@@ -69,6 +69,48 @@ void Router::client() {
 	ss << "Router: " << ownAddr << " ready. UDP Port: " << udpPort;
 	strcpy(routerInfo, ss.str().c_str());
 	send(tcpSocket, &routerInfo, sizeof(routerInfo), 0);    //sends ready msg to manager
+
+	fd_set readfds;	// master file descriptor list
+//	int sd, n, sv;
+	int n, sv;
+
+	while (1) {
+		char packet[100];
+		memset(&packet, 0, sizeof(packet));
+		FD_ZERO(&readfds);
+		FD_SET(udpSocket, &readfds);
+		FD_SET(tcpSocket, &readfds);
+
+		n = tcpSocket + 1;
+		sv = select(n, &readfds, NULL, NULL, NULL);
+
+		if (sv == -1) {
+			perror("select");
+		} else {
+			// one or both of the descriptors have data
+			if (FD_ISSET(tcpSocket, &readfds)) {
+				int recvd = -1;
+
+//				if ((tcpSocket = accept(tcpSocket,(struct sockaddr *) &their_addr, &sin_size))<0){
+//					perror("accept");
+//					exit(1);
+//				}
+
+				recvd = recv(tcpSocket, packet, sizeof(packet), 0);
+
+				if (recvd < 0) {
+					fprintf(stderr, "Issue with recv \n");
+					printf("errno %d", errno);
+					exit(EXIT_FAILURE);
+				}
+
+				stringstream ss;
+				ss << "Message recieved was: " << packet;
+				printMessage(ss.str());
+				cout << ss.str() << endl;
+			}
+		}
+	}
 }
 
 void Router::printMessage(string message) {
