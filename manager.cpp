@@ -304,3 +304,177 @@ int main(int argc, char *argv[]) {
 	manager.killProcesses();
 	//system("killall manager"); //temporary to kill processes
 }
+
+/* THIS IS EVREYTHING NEEDED FOR Dijkstra’s
+
+#include<bits/stdc++.h>
+using namespace std;
+# define INF 0x3f3f3f3f
+
+
+struct SPT {    //Used to store hop info after Djikstras
+	int src;    
+	int dest;
+	int hop;
+};
+
+vector<SPT> ShortPathTree; //Used to store hop info after Djikstras
+void printSPT(int ownAddr);
+
+#######THIS WAS IN MAIN#####################
+	int V = 10; //10 is just the number or routers to run it on
+    Graph g(V);
+	
+	for (int i = 0; i < signed(manager.conTable.size()); ++i) {
+		g.addEdge(manager.conTable[i].src,manager.conTable[i].dest,manager.conTable[i].cost);
+	}
+	
+	for(int i = 0; i < V; i++){
+		vector<SPT> temp = g.shortestPath(i);
+		for (int i = 0; i < signed(temp.size()); ++i) {
+		manager.ShortPathTree.push_back(temp[i]);
+		}
+
+	}
+		for(int i = 0; i < V; i++){
+		cout << "SPT FOR ROUTER " << i << endl;
+		manager.printSPT(i);                      //when in router only need to do this for the specific router you want the tree from
+		}
+###############################################
+
+class Graph
+{
+    int V;    // No. of vertices
+ 
+    // In a weighted graph, we need to store vertex 
+    // and weight pair for every edge
+    list< pair<int, int> > *adj;
+ 
+public:
+    Graph(int V);  // Constructor
+ 
+    // function to add an edge to graph
+    void addEdge(int u, int v, int w);
+ 
+    // prints shortest path from s
+    vector<SPT> shortestPath(int s);
+};
+ 
+// Allocates memory for adjacency list
+Graph::Graph(int V)
+{
+    this->V = V;
+    adj = new list< pair<int, int> >[V];
+}
+ 
+void Graph::addEdge(int u, int v, int w)
+{
+    adj[u].push_back(make_pair(v, w));
+    adj[v].push_back(make_pair(u, w));
+}
+ 
+// Prints shortest paths from src to all other vertices
+vector<SPT> Graph::shortestPath(int src)
+{
+	vector<SPT> nextHops;
+    // Create a set to store vertices that are being
+    // prerocessed
+    set< pair<int, int> > setds;
+	int parent[V];
+ 
+    // Create a vector for distances and initialize all
+    // distances as infinite (INF)
+    vector<int> dist(V, INF);
+ 
+    // Insert source itself in Set and initialize its
+    // distance as 0.
+    setds.insert(make_pair(0, src));
+    dist[src] = 0;
+ 
+    /* Looping till all shortest distance are finalized
+       then setds will become empty 
+    while (!setds.empty())
+    {
+        // The first vertex in Set is the minimum distance
+        // vertex, extract it from set.
+        pair<int, int> tmp = *(setds.begin());
+        setds.erase(setds.begin());
+ 
+        // vertex label is stored in second of pair (it
+        // has to be done this way to keep the vertices
+        // sorted distance (distance must be first item
+        // in pair)
+        int u = tmp.second;
+ 
+        // 'i' is used to get all adjacent vertices of a vertex
+        list< pair<int, int> >::iterator i;
+        for (i = adj[u].begin(); i != adj[u].end(); ++i)
+        {
+            // Get vertex label and weight of current adjacent
+            // of u.
+            int v = (*i).first;
+            int weight = (*i).second;
+ 
+            //  If there is shorter path to v through u.
+            if (dist[v] > dist[u] + weight)
+            {
+                /*  If distance of v is not INF then it must be in
+                    our set, so removing it and inserting again
+                    with updated less distance.  
+                    Note : We extract only those vertices from Set
+                    for which distance is finalized. So for them, 
+                    we would never reach here.  
+                if (dist[v] != INF)
+                    setds.erase(setds.find(make_pair(dist[v], v)));
+ 
+                // Updating distance of v
+                dist[v] = dist[u] + weight;
+				parent[v] = u;
+                setds.insert(make_pair(dist[v], v));
+            }
+        }
+    }
+ 
+    // Print shortest distances stored in dist[]
+    //printf("Vertex\t   Distance\tPath\n");
+    for (int i = 0; i < V; ++i){
+		SPT spt;
+			spt.src = i;
+			spt.dest = src;
+			spt.hop = parent[i];
+		if (i == src){spt.hop = -1;}
+		nextHops.push_back(spt);
+       // printf("%d \t\t %d\t\t%d\n", i, dist[i],parent[i]);
+	}
+
+	return nextHops;
+}
+
+	void Manager::printSPT(int ownAddr){
+		stringstream ss;
+		ss.str("");
+		//go through all shortest paths
+		for (int i = 0; i < signed(ShortPathTree.size()); ++i) {
+			//find the ones for the table you want
+			if (ShortPathTree[i].dest == ownAddr && ShortPathTree[i].hop == -1){
+				ss << "( " << ShortPathTree[i].dest << " , 0 , " << ShortPathTree[i].dest << " )\n";
+			}
+			else if (ShortPathTree[i].src == ownAddr){
+				ss << "( " << ShortPathTree[i].dest << " , ";
+				for (int k = 0; k < signed(conTable.size()); ++k) { 
+					if ((conTable[k].src == ShortPathTree[i].src && conTable[k].dest == ShortPathTree[i].hop) || (conTable[k].dest == ShortPathTree[i].src && conTable[k].src == ShortPathTree[i].hop)){
+						ss << conTable[k].cost << " , ";
+					}
+
+				}	
+				ss << ShortPathTree[i].hop << " )\n";
+				
+			}
+		}
+		cout << ss.str() << endl;
+		ss.str("");
+	}
+		
+
+
+*/
