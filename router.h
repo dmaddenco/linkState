@@ -53,6 +53,7 @@ struct Route {    //will be used for conTable construction
 class Router {
 public:
 	vector <Route> conTable;
+	vector <Route> tempconTable;
 	string filename = "router";
 
 	void printMessage(string message);
@@ -62,7 +63,9 @@ public:
 	void createFileName(char *argv1);
 
 	void client();
-	void createConTable(string table);
+	vector<Route> createConTable(string table);
+	string compressConTable();
+	void compare();
 };
 
 #endif //LINKSTATE_ROUTER_H

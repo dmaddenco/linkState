@@ -94,7 +94,8 @@ void Router::createFileName(char *argv1) {
 	filename += ".out";
 }
 
-void Router::createConTable(string table) {
+vector<Route> Router::createConTable(string table) {
+	vector<Route> Con;
 	ss.str("");
 	if (table != "") {
 		vector <string> r;
@@ -109,19 +110,48 @@ void Router::createConTable(string table) {
 				route.dest = stoi(strs[1]);
 				route.cost = stoi(strs[2]);
 				route.destUDP = stoi(strs[3]);
-				conTable.push_back(route);
+				Con.push_back(route);
 			}
 		}
 		ss << "My imediate neighbors are: | ";
-		for (int j = 0; j < conTable.size(); ++j) {
-			ss << "src: " << conTable[j].src
-				 << " dest: " << conTable[j].dest
-				 << " cost: " << conTable[j].cost
-				 << " destUDP: " << conTable[j].destUDP << " | ";
+		for (int j = 0; j < Con.size(); ++j) {
+			ss << "src: " << Con[j].src
+				 << " dest: " << Con[j].dest
+				 << " cost: " << Con[j].cost
+				 << " destUDP: " << Con[j].destUDP << " | ";
 		}
 	}
 	printMessage(ss.str());
 	ss.str("");
+	return Con;
+}
+
+string Router::compressConTable(){ //puts all the Routes in string delimited by ","
+	stringstream ss;
+	for (int i = 0; i < signed(conTable.size()); ++i) {
+			ss << conTable[i].src << " " << conTable[i].dest << " " << conTable[i].cost << " " << conTable[i].destUDP << ",";
+	}
+	string table = ss.str();
+	return table.substr(0, table.length()-1);
+}
+
+void Router::compare(){
+
+	for (int i = 0; i < signed(tempconTable.size()); ++i) {
+		for (int j = 0; j < signed(conTable.size()); ++j) {
+			if (tempconTable[i].src == conTable[j].src){
+				if (tempconTable[i].dest == conTable[j].dest){
+					tempconTable.erase(tempconTable.begin() + i);
+				}
+			}
+		}
+	}
+	for (int i = 0; i < signed(tempconTable.size()); ++i) {
+		conTable.push_back(tempconTable[i]);
+	}
+	tempconTable.clear();
+	
+
 }
 
 int main(int argc, char *argv[]) {
@@ -133,10 +163,11 @@ int main(int argc, char *argv[]) {
 	ownAddr = atoi(argv[1]);
 	tcpPort = atoi(argv[2]);
 	udpPort = atoi(argv[3]);
-	router.createConTable(argv[4]);
+	router.conTable = router.createConTable(argv[4]);
 
 	ss << "Router: " << ownAddr;
 //	cout << ss << endl;
 	router.printMessage(ss.str());
 	router.client();    //call client with given port number
+
 }
