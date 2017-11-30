@@ -4,6 +4,8 @@
 
 #include "manager.h"
 
+int tcpSocket;
+
 /*
  * Reads in file, creates vector of unique routers,
  * and vector of Route structs that contain (src dest cost)
@@ -162,7 +164,7 @@ void Manager::establishConnection(int port) {
 	servAddr.sin_family = AF_INET;
 	servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	servAddr.sin_port = htons(port);    //PORT is the sstones own port to listen to
-	int tcpSocket, routerTCPsocket;
+	int routerTCPsocket;
 	tcpSocket = socket(PF_INET, SOCK_STREAM, 0);    //incoming socket
 
 	if (tcpSocket < 0) {
@@ -171,7 +173,7 @@ void Manager::establishConnection(int port) {
 		exit(EXIT_FAILURE);
 	}
 
-	if (bind(tcpSocket, (struct sockaddr *) &servAddr, sizeof(servAddr)) < 0) {
+	if (::bind(tcpSocket, (struct sockaddr *) &servAddr, sizeof(servAddr)) < 0) {
 		printMessage("bind failed");
 		perror("bind failed");
 		exit(EXIT_FAILURE);
@@ -193,8 +195,9 @@ void Manager::establishConnection(int port) {
 //	int sd, n, sv;
 	int n, sv;
 
-	while (1) {
-//	while (routerTcpSockets.size() != uniqRouters.size()) {
+	bool dijk = false;
+//	while (1) {
+	while (!dijk) {
 //		int numbytes;
 		char packet[100];
 		memset(&packet, 0, sizeof(packet));
@@ -274,6 +277,12 @@ void Manager::establishConnection(int port) {
 							ss << "Message recieved was: " << r[0] << " from Router: " << r[1];
 							printMessage(ss.str());
 							cout << ss.str() << endl;
+
+							Translate translate;
+							translate.port = stoi(r[1]);
+							translate.sock = routerTcpSockets[i];
+							translations.push_back(translate);
+
 							bool contains = false;
 							int router = stoi(r[1]);
 							for (int j = 0; j < signed(responses.size()); ++j) {
@@ -290,7 +299,7 @@ void Manager::establishConnection(int port) {
 							}
 						}
 					}//finsih LS while loop
-					for (int i = 0; i < routerTcpSockets.size(); ++i) {
+					for (int i = 0; i < signed(routerTcpSockets.size()); ++i) {
 						char msg[100];
 						memset(&msg, 0, sizeof(msg));
 						ss.str("");
@@ -334,14 +343,85 @@ void Manager::establishConnection(int port) {
 							if (responses.size() == uniqRouters.size()) {
 								printMessage("All routers finished DIJKSTRA");
 								lsDone = true;
+								dijk = true;
 							}
 						}
 					}//finsih DIJKSTRA while loop
-
 				}
 			}
 		}
 	}
+	findPath();
+}
+
+void Manager::findPath() {
+	printMessage("START METHOD: findPath()");
+	for (int k = 0; k < signed(wantedPaths.size()); ++k) {
+		for (int i = 0; i < signed(uniqRouters.size()); ++i) {
+			if (uniqRouters[i] == wantedPaths[k].src) {
+				char msg[100];
+				memset(&msg, 0, sizeof(msg));
+				stringstream ss;
+				ss << wantedPaths[k].desireDest;
+				strcpy(msg, ss.str().c_str());
+				ss.str("");
+				ss << "Sending: " << wantedPaths[k].desireDest << " to Router: " << uniqRouters[i];
+				printMessage(ss.str());
+				send(translate(uniqRouters[i]), &msg, sizeof(msg), 0);
+				fd_set readfds;	// master file descriptor list
+				int n, sv;
+				sockaddr_in their_addr;    //for connecting to incoming connections socket
+				socklen_t sin_size = sizeof(their_addr);
+				int routerTCPsocket;
+				while (1) {
+					char packet[100];
+					memset(&packet, 0, sizeof(packet));
+
+					FD_ZERO(&readfds);
+					FD_SET(tcpSocket, &readfds);
+
+					n = tcpSocket + 1;
+					sv = select(n, &readfds, NULL, NULL, NULL);
+
+					if (sv == -1) {
+						perror("select");
+					} else {
+						// one or both of the descriptors have data
+						if (FD_ISSET(tcpSocket, &readfds)) {
+							int recvd = -1;
+
+							if ((routerTCPsocket = accept(tcpSocket, (struct sockaddr *) &their_addr, &sin_size)) < 0) {
+								perror("accept");
+								exit(1);
+							}
+
+							recvd = recv(routerTCPsocket, packet, sizeof(packet), 0);
+
+							if (recvd < 0) {
+								fprintf(stderr, "Issue with recv \n");
+								printf("errno %d", errno);
+								exit(EXIT_FAILURE);
+							}
+
+							stringstream ss;
+							ss << "Message recieved was: " << packet;
+							printMessage(ss.str());
+							cout << ss.str() << endl;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+int Manager::translate(int port) {
+	for (int i = 0; i < signed(translations.size()); ++i) {
+		if (translations[i].port == port) {
+			return translations[i].sock;
+		}
+	}
+	return port;
 }
 
 void Manager::printMessage(string message) {
