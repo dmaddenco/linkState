@@ -71,6 +71,12 @@ struct spTable{
 	int nextHop;
 };
 
+struct Path {
+	int src;
+	int nextHop;
+	int desireDest;
+};
+
 class Router {
 public:
 	vector <Route> conTable;

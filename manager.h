@@ -64,6 +64,7 @@ public:
 	vector<int> PIDs;
 	vector <Route> conTable;
 	vector <int> routerTcpSockets;
+	vector <Path> wantedPaths;
 
 	void readFile(ifstream &inFile);
 
