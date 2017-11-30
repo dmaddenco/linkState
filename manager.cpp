@@ -404,7 +404,7 @@ void Manager::findPath() {
 							}
 
 							stringstream ss;
-							ss << "Message recieved was: " << packet;
+							ss << "Path Message recieved was: " << packet;
 							printMessage(ss.str());
 							cout << ss.str() << endl;
 						}
