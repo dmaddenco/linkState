@@ -232,7 +232,7 @@ void Manager::establishConnection(int port) {
 				}
 
 				stringstream ss;
-				ss << "Message recieved was: " << packet;
+				ss << "Message received was: " << packet;
 				printMessage(ss.str());
 				cout << ss.str() << endl;
 				routerTcpSockets.push_back(routerTCPsocket);
@@ -274,7 +274,7 @@ void Manager::establishConnection(int port) {
 							boost::split(r, packet, boost::is_any_of(" "));
 
 							stringstream ss;
-							ss << "Message recieved was: " << r[0] << " from Router: " << r[1];
+							ss << "Message received was: " << r[0] << " from Router: " << r[1];
 							printMessage(ss.str());
 							cout << ss.str() << endl;
 
@@ -327,7 +327,7 @@ void Manager::establishConnection(int port) {
 							boost::split(r, packet, boost::is_any_of(" "));
 
 							stringstream ss;
-							ss << "Message recieved was: " << r[0] << " from Router: " << r[1];
+							ss << "Message received was: " << r[0] << " from Router: " << r[1];
 							printMessage(ss.str());
 							cout << ss.str() << endl;
 							bool contains = false;
@@ -373,7 +373,8 @@ void Manager::findPath() {
 				sockaddr_in their_addr;    //for connecting to incoming connections socket
 				socklen_t sin_size = sizeof(their_addr);
 				int routerTCPsocket;
-				while (1) {
+				bool received = false;
+				while (!received) {
 					char packet[100];
 					memset(&packet, 0, sizeof(packet));
 
@@ -404,9 +405,13 @@ void Manager::findPath() {
 							}
 
 							stringstream ss;
-							ss << "Path Message recieved was: " << packet;
+							ss << "Message from router was: " << packet;
 							printMessage(ss.str());
 							cout << ss.str() << endl;
+
+//							if (to_string(packet).compare("Destination packet")) {
+//								received = true;
+//							}
 						}
 					}
 				}
