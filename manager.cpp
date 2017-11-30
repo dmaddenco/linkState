@@ -245,7 +245,7 @@ void Manager::establishConnection(int port) {
 						ss << "Sending START_LS_ACK";
 						printMessage(ss.str());
 						ss.str("");
-						ss << "START_LS_ACK " << conTable.size();
+						ss << "START_LS_ACK " << conTable.size() << " " << uniqRouters.size();
 						strcpy(msg, ss.str().c_str());
 						send(routerTcpSockets[i], &msg, sizeof(msg), 0);
 					}

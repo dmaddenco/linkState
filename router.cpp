@@ -11,6 +11,8 @@ int udpPort;
 int tcpSocket;
 int udpSocket;
 
+int uniqueNumRouters;
+
 stringstream ss;
 
 void Router::client() {
@@ -128,6 +130,10 @@ void Router::client() {
 					printMessage(ss.str());
 					ss.str("");
 					ss << "Expected conTable size: " << str[1];
+					printMessage(ss.str());
+					uniqueNumRouters = str[2];
+					ss.str("");
+					ss << "Number of unique routers: " << uniqueNumRouters;
 					printMessage(ss.str());
 					if (startLinkState(stoi(string(str[1])))) {
 						sendLSFinish();
