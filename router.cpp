@@ -39,7 +39,7 @@ void Router::client() {
 	printMessage("CREATING UDP SOCKET");
 	udpSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
-	if (tcpSocket < 0) {
+	if (udpSocket < 0) {
 		printMessage("ERROR CREATING UDP SOCKET");
 		cerr << "ERROR CREATING UDP SOCKET" << endl;
 		exit(EXIT_FAILURE);
@@ -55,7 +55,7 @@ void Router::client() {
 	ServAddrUDP.sin_addr.s_addr = htonl(INADDR_ANY);
 	ServAddrUDP.sin_port = htons(udpPort);
 
-	if (bind(udpSocket, (struct sockaddr *) &ServAddrUDP, sizeof(ServAddrUDP)) < 0) {
+	if (::bind(udpSocket, (struct sockaddr *) &ServAddrUDP, sizeof(ServAddrUDP)) < 0) {
 		printMessage("bind failed");
 		perror("bind failed");
 		exit(EXIT_FAILURE);

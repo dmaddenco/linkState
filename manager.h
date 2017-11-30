@@ -53,6 +53,11 @@ using std::thread;
 #define MAXPENDING 10
 #define TCP_PORT 5000
 
+struct Translate {
+	int sock;
+	int port;
+};
+
 class Manager {
 public:
 	int sock_in;
@@ -65,6 +70,7 @@ public:
 	vector <Route> conTable;
 	vector <int> routerTcpSockets;
 	vector <Path> wantedPaths;
+	vector <Translate> translations;
 
 	void readFile(ifstream &inFile);
 
@@ -79,6 +85,8 @@ public:
 
 	const string currentDateTime();
 	string conTableString(int src, vector <Route> routes);
+	void findPath();
+	int translate(int port);
 };
 
 #endif //LINKSTATE_MANAGER_H
