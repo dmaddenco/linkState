@@ -137,7 +137,7 @@ void Router::client() {
 					ss << "Number of unique routers: " << uniqueNumRouters;
 					printMessage(ss.str());
 					if (startLinkState(stoi(string(str[1])))) {
-						sendLSFinish();
+						sendLSFinish(); //finish LS wait to start DIJKSTRA
 						
 						recvd = recv(tcpSocket, packet, sizeof(packet), 0);
 
@@ -168,7 +168,65 @@ void Router::client() {
 								}
 							}
 							printSPT(ownAddr);
-							sendDIJKSTRAFinish();
+							sendDIJKSTRAFinish(); //finish DIJKSTRA wait to start traffic
+						
+							bool done = false;
+							
+							while(!done){
+								//print to log file "reciving Node information from manager"
+								ss.str("");
+								ss << "reciving Node information from manager";
+								printMessage(ss.str());
+								recvd = recv(tcpSocket, packet, sizeof(packet), 0);
+
+								if (recvd < 0) {
+									fprintf(stderr, "Issue with recv \n");
+									printf("errno %d", errno);
+									exit(EXIT_FAILURE);
+								}
+
+								ss.str("");
+								ss << "Message received was: " << packet;
+								printMessage(ss.str());
+								cout << ss.str() << endl;
+								msg = packet;
+								str.clear();
+								boost::split(str, msg, boost::is_any_of(" "));
+								if (str[0].compare("QUIT") == 0) {
+									sendQUITFinish();
+									ss.str("");
+									ss << "Router " << ownAddr << " sutting down, Goodbye!";
+									printMessage(ss.str());
+									done = true;
+								}
+								else{
+									//send to next place 
+									int dest = stoi(str[0]);
+									int next;
+									int port;
+									for (int i = 0; i < signed(finSPTable.size()); ++i) {
+										if (dest == finSPTable[i].dest){next = finSPTable[i].nextHop;}
+									}
+									for (int i = 0; i < signed(conTable.size()); ++i) {
+										if (next == conTable[i].dest){
+											port = conTable[i].destUDP;
+											break;
+										}
+									}
+									//send message to router
+									ss.str("");
+									ss << "Packed is destined for Router " << dest << ", Next hop is Router " << next;
+									printMessage(ss.str());
+
+									struct sockaddr_in neighborUdpSocket;
+									neighborUdpSocket.sin_family = AF_INET;
+									neighborUdpSocket.sin_addr.s_addr = INADDR_ANY;    //used INADDR_ANY because i think thats local addresses
+									neighborUdpSocket.sin_port = htons(port);
+									sendto(udpSocket, &msg, sizeof(msg), 0, (struct sockaddr *) &neighborUdpSocket,
+									sizeof(neighborUdpSocket));
+
+								}
+							}
 						}
 					}
 				}
@@ -206,6 +264,17 @@ void Router::client() {
 	}
 }
 
+void Router::sendQUITFinish() {
+	printMessage("Finished traffic, sending QUIT_ACK");
+	char routerInfo[100];
+	memset(&routerInfo, 0, sizeof(routerInfo));
+	stringstream lsFinish;
+	lsFinish << "QUIT_ACK " << ownAddr;
+	strcpy(routerInfo, lsFinish.str().c_str());
+	send(tcpSocket, &routerInfo, sizeof(routerInfo), 0);    //sends ready msg to manager
+
+}
+
 void Router::sendDIJKSTRAFinish() {
 	printMessage("Finished DIJKSTRA, sending FINISH_DIJKSTRA_ACK");
 	char routerInfo[100];
@@ -229,7 +298,7 @@ void Router::sendLSFinish() {
 bool Router::startLinkState(int expectedConTableSize) {
 	printMessage("START METHOD: startLinkState()");
 	vector <sockaddr_in> sockets;
-	for (int i = 0; i < udpPorts.size(); ++i) {
+	for (int i = 0; i < signed(udpPorts.size()); ++i) {
 		char msg[100];
 		memset(&msg, 0, sizeof(msg));
 		struct sockaddr_in neighborUdpSocket;
@@ -256,7 +325,7 @@ bool Router::startLinkState(int expectedConTableSize) {
 //	int sd, n, sv;
 	int n, sv;
 
-	while (conTable.size() != expectedConTableSize) {
+	while (signed(conTable.size()) != expectedConTableSize) {
 		char packet[1000];
 		memset(&packet, 0, sizeof(packet));
 		FD_ZERO(&readfds);
