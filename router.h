@@ -41,6 +41,10 @@ using std::endl;
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
+#include<bits/stdc++.h>
+using namespace std;
+# define INF 0x3f3f3f3f
+
 using std::stringstream;
 
 struct Route {    //will be used for conTable construction
@@ -53,6 +57,18 @@ struct Route {    //will be used for conTable construction
 struct Message {
 	char table[1000];
 	int srcUDP;
+};
+
+struct SPT {    //Used to store hop info after Djikstras
+	int src;    
+	int dest;
+	int hop;
+};
+
+struct spTable{ 
+	int dest;
+	int cost;
+	int nextHop;
 };
 
 struct Path {
@@ -73,6 +89,15 @@ public:
 	const string currentDateTime();
 
 	void createFileName(char *argv1);
+	
+	vector<SPT> ShortPathTree; //Used to store hop info after Djikstras
+	vector<spTable> finSPTable; //final Shortest Path Tree for router
+	void printSPT(int ownAddr);
+	list< pair<int, int> > *adj;
+	int V;
+	void graph(int V);
+	void addEdge(int u, int v, int w);
+	vector<SPT> shortestPath(int src);
 
 	void client();
 	vector<Route> createConTable(string table);
@@ -81,6 +106,7 @@ public:
 	void createUdpVector();
 	bool startLinkState(int expectedConTableSize);
 	void sendLSFinish();
+	void sendDIJKSTRAFinish();
 };
 
 #endif //LINKSTATE_ROUTER_H
