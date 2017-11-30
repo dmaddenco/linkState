@@ -55,6 +55,12 @@ struct Message {
 	int srcUDP;
 };
 
+struct Path {
+	int src;
+	int nextHop;
+	int desireDest;
+};
+
 class Router {
 public:
 	vector <Route> conTable;
