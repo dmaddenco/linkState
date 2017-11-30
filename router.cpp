@@ -131,7 +131,8 @@ void Router::client() {
 					ss.str("");
 					ss << "Expected conTable size: " << str[1];
 					printMessage(ss.str());
-					uniqueNumRouters = str[2];
+					uniqueNumRouters = stoi(str[2]);
+					graph(uniqueNumRouters);
 					ss.str("");
 					ss << "Number of unique routers: " << uniqueNumRouters;
 					printMessage(ss.str());
@@ -585,7 +586,7 @@ int main(int argc, char *argv[]) {
 	
 	//int V = 10; //10 is just the number or routers to run it on
 	//Graph g(V);
-	router.graph(10); //need to find where we know how many routers there are and change number
+	//router.graph(10); //need to find where we know how many routers there are and change number
 	router.client();    //call client with given port number
 
 }
