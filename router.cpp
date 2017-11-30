@@ -202,6 +202,7 @@ void Router::client() {
 								else{
 									//send to next place 
 									int dest = stoi(str[0]);
+									if (dest != ownAddr){
 									int next;
 									int port;
 									for (int i = 0; i < signed(finSPTable.size()); ++i) {
@@ -224,7 +225,10 @@ void Router::client() {
 									neighborUdpSocket.sin_port = htons(port);
 									sendto(udpSocket, &msg, sizeof(msg), 0, (struct sockaddr *) &neighborUdpSocket,
 									sizeof(neighborUdpSocket));
-
+									}
+									else{
+										sendMessageFinish();
+									}
 								}
 							}
 						}
@@ -264,6 +268,15 @@ void Router::client() {
 	}
 }
 
+void Router::sendMessageFinish() {
+	printMessage("Message reached destination, sending Message_ACK");
+	char routerInfo[100];
+	memset(&routerInfo, 0, sizeof(routerInfo));
+	stringstream lsFinish;
+	lsFinish << "Destination Router " << ownAddr << "has received the packet.";
+	strcpy(routerInfo, lsFinish.str().c_str());
+	send(tcpSocket, &routerInfo, sizeof(routerInfo), 0);    //sends ready msg to manager
+}
 void Router::sendQUITFinish() {
 	printMessage("Finished traffic, sending QUIT_ACK");
 	char routerInfo[100];

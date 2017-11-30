@@ -108,6 +108,7 @@ public:
 	void sendLSFinish();
 	void sendDIJKSTRAFinish();
 	void sendQUITFinish();
+	void sendMessageFinish();
 
 };
 
