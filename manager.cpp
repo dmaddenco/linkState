@@ -75,7 +75,6 @@ void Manager::createRouters() {
 	printMessage("STARTING METHOD: createRouters()");
 
 	for (int i = 0; i < signed(uniqRouters.size()); ++i) {
-//		Router router;
 		int src = uniqRouters[i];
 		for (int j = 0; j < signed(routes.size()); ++j) {
 			if (routes[j].src == src) {
@@ -90,13 +89,13 @@ void Manager::createRouters() {
 	}
 	printMessage("Current Connection Table:");
 	for (int k = 0; k < signed(conTable.size()); ++k) {
-			stringstream ss;
-			ss << "src: " << conTable[k].src
-				 << " dest: " << conTable[k].dest
-				 << " cost: " << conTable[k].cost
-				 << " destUDP: " << conTable[k].destUDP;
-	//		cout << ss.str() << endl; //For testing purposes
-			printMessage(ss.str());
+		stringstream ss;
+		ss << "src: " << conTable[k].src
+		   << " dest: " << conTable[k].dest
+		   << " cost: " << conTable[k].cost
+		   << " destUDP: " << conTable[k].destUDP;
+		//		cout << ss.str() << endl; //For testing purposes
+		printMessage(ss.str());
 
 	}
 }
@@ -117,14 +116,13 @@ void Manager::routerSpinUp() {
 		childPid = fork();
 		PIDs.push_back(childPid);
 		if (!childPid) {
-//			cout << "child PID: " << getpid() << endl;
 			char *argv[1000];
 			memset(&argv, 0, sizeof(argv));
-			argv[0] = strdup("router");	//router execution
-			argv[1] = (char *) to_string(uniqRouters[i]).c_str();	//router ownAddr
-			argv[2] = (char *) to_string(TCP_PORT).c_str();	//TCP port for router->manager
-			argv[3] = (char *) to_string(ports[i]).c_str();	//UDP port for router->router
-			argv[4] = (char *) table.c_str();	//src dest weight udpPort,src dest weight udpPort...
+			argv[0] = strdup("router");    //router execution
+			argv[1] = (char *) to_string(uniqRouters[i]).c_str();    //router ownAddr
+			argv[2] = (char *) to_string(TCP_PORT).c_str();    //TCP port for router->manager
+			argv[3] = (char *) to_string(ports[i]).c_str();    //UDP port for router->router
+			argv[4] = (char *) table.c_str();    //src dest weight udpPort,src dest weight udpPort...
 			stringstream ss;
 			ss << "STARTING Router: " << uniqRouters[i] << " for port " << ports[i];
 			cout << ss.str() << endl;
@@ -133,7 +131,7 @@ void Manager::routerSpinUp() {
 			break;    //don't let child fork again
 		} else if (childPid > 0) {
 //            wait(&status);	//wait until child executes
-        }
+		}
 		portIndex++;
 	}
 }
@@ -191,19 +189,13 @@ void Manager::establishConnection(int port) {
 	sockaddr_in their_addr;    //for connecting to incoming connections socket
 	socklen_t sin_size = sizeof(their_addr);
 
-	fd_set readfds;	// master file descriptor list
-//	int sd, n, sv;
+	fd_set readfds;    // master file descriptor list
 	int n, sv;
 
 	bool dijk = false;
-//	while (1) {
 	while (!dijk) {
-//		int numbytes;
 		char packet[100];
 		memset(&packet, 0, sizeof(packet));
-
-//		sin_size = sizeof their_addr;
-//		new_fd = accept(tcpSocket, (struct sockaddr *) &their_addr, &sin_size);    //socket to recieve on
 
 		FD_ZERO(&readfds);
 		FD_SET(tcpSocket, &readfds);
@@ -218,7 +210,7 @@ void Manager::establishConnection(int port) {
 			if (FD_ISSET(tcpSocket, &readfds)) {
 				int recvd = -1;
 
-				if ((routerTCPsocket = accept(tcpSocket,(struct sockaddr *) &their_addr, &sin_size))<0){
+				if ((routerTCPsocket = accept(tcpSocket, (struct sockaddr *) &their_addr, &sin_size)) < 0) {
 					perror("accept");
 					exit(1);
 				}
@@ -254,7 +246,6 @@ void Manager::establishConnection(int port) {
 					}
 					bool lsDone = false;
 					vector<int> responses;
-//					while (routerTcpSockets.size() == uniqRouters.size()) {
 					/*
 					 * This while loop will loop over all routerTcpSockets that were created above.
 					 * Once a response has been heard from all unique routers, the while loop exits.
@@ -347,11 +338,56 @@ void Manager::establishConnection(int port) {
 							}
 						}
 					}//finsih DIJKSTRA while loop
+					printMessage("START METHOD: findPath()");
+					while (1) {
+						for (int k = 0; k < signed(wantedPaths.size()); ++k) {
+							for (int i = 0; i < signed(uniqRouters.size()); ++i) {
+								if (uniqRouters[i] == wantedPaths[k].src) {
+									char msg[100];
+									memset(&msg, 0, sizeof(msg));
+									stringstream ss;
+									ss << wantedPaths[k].desireDest;
+									strcpy(msg, ss.str().c_str());
+									ss.str("");
+									ss << "Sending: " << wantedPaths[k].desireDest << " to Router: " << uniqRouters[i];
+									printMessage(ss.str());
+									send(translate(uniqRouters[i]), &msg, sizeof(msg), 0);
+									bool received = false;
+									while (!received) {
+										char packet[100];
+										memset(&packet, 0, sizeof(packet));
+										int recvd = -1;
+
+										cout << "here" << endl;
+										recvd = recv(translate(uniqRouters[i]), packet, sizeof(packet), 0);
+										cout << "now here" << endl;
+
+										if (recvd < 0) {
+											fprintf(stderr, "Issue with recv \n");
+											printf("errno %d", errno);
+											exit(EXIT_FAILURE);
+										}
+
+										stringstream ss;
+										ss << "Message from router was: " << packet;
+										printMessage(ss.str());
+										cout << ss.str() << endl;
+
+										vector <string> strs;
+										boost::split(strs, packet, boost::is_any_of(" "));
+										if (strs[0].compare("Destination") == 0) {
+											received = true;
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 		}
 	}
-	findPath();
+//	findPath();
 }
 
 void Manager::findPath() {
@@ -368,53 +404,42 @@ void Manager::findPath() {
 				ss << "Sending: " << wantedPaths[k].desireDest << " to Router: " << uniqRouters[i];
 				printMessage(ss.str());
 				send(translate(uniqRouters[i]), &msg, sizeof(msg), 0);
-				fd_set readfds;	// master file descriptor list
-				int n, sv;
-				sockaddr_in their_addr;    //for connecting to incoming connections socket
-				socklen_t sin_size = sizeof(their_addr);
-				int routerTCPsocket;
 				bool received = false;
+//				unsigned int microseconds = 1000;
+//				usleep(microseconds);
+
+//				fd_set readfds;	// master file descriptor list]
+//				int n, sv;
+//
+//				sockaddr_in their_addr;    //for connecting to incoming connections socket
+//				socklen_t sin_size = sizeof(their_addr);
 				while (!received) {
 					char packet[100];
 					memset(&packet, 0, sizeof(packet));
+					for (int j = 0; j < signed(routerTcpSockets.size()); ++j) {
 
-					FD_ZERO(&readfds);
-					FD_SET(tcpSocket, &readfds);
+						int recvd = -1;
 
-					n = tcpSocket + 1;
-					sv = select(n, &readfds, NULL, NULL, NULL);
+						cout << "here" << endl;
+						recvd = recv(routerTcpSockets[j], packet, sizeof(packet), 0);
+						cout << "now here" << endl;
 
-					if (sv == -1) {
-						perror("select");
-					} else {
-						// one or both of the descriptors have data
-						if (FD_ISSET(tcpSocket, &readfds)) {
-							int recvd = -1;
+						if (recvd < 0) {
+							fprintf(stderr, "Issue with recv \n");
+							printf("errno %d", errno);
+							exit(EXIT_FAILURE);
+						}
 
-							if ((routerTCPsocket = accept(tcpSocket, (struct sockaddr *) &their_addr, &sin_size)) < 0) {
-								perror("accept");
-								exit(1);
-							}
+						stringstream ss;
+						ss << "Message from router was: " << packet;
+						printMessage(ss.str());
+						cout << ss.str() << endl;
 
-							recvd = recv(routerTCPsocket, packet, sizeof(packet), 0);
-
-							if (recvd < 0) {
-								fprintf(stderr, "Issue with recv \n");
-								printf("errno %d", errno);
-								exit(EXIT_FAILURE);
-							}
-
-							stringstream ss;
-							ss << "Message from router was: " << packet;
-							printMessage(ss.str());
-							cout << ss.str() << endl;
-
-							vector <string> strs;
-							boost::split(strs, packet, boost::is_any_of(" "));
-							cout << strs[0] << endl;
-							if (strs[0].compare("Destination") == 0) {
-								received = true;
-							}
+						vector <string> strs;
+						boost::split(strs, packet, boost::is_any_of(" "));
+						cout << strs[0] << endl;
+						if (strs[0].compare("Destination") == 0) {
+							received = true;
 						}
 					}
 				}
@@ -471,7 +496,7 @@ string Manager::conTableString(int src, vector <Route> routes) {
 		}
 	}
 	string table = ss.str();
-	return table.substr(0, table.length()-1);
+	return table.substr(0, table.length() - 1);
 }
 
 int main(int argc, char *argv[]) {
@@ -487,7 +512,7 @@ int main(int argc, char *argv[]) {
 	//will first create TCP connection and wait for incomming connections
 	//needed first, so routers have something to connect to
 	thread managerTCPCreate(&Manager::establishConnection, &manager, TCP_PORT);
-	thread managerRouterCreate(&Manager::routerSpinUp, &manager);	//execute n routers
+	thread managerRouterCreate(&Manager::routerSpinUp, &manager);    //execute n routers
 	managerTCPCreate.join();
 	managerRouterCreate.join();
 

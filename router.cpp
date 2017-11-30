@@ -314,49 +314,46 @@ void Router::shortestPath() {
 					printMessage(ss.str());
 				} else {
 					ss.str("");
-					ss << "receiving information from router";
+					ss << "Receiving information from router";
 					printMessage(ss.str());
 					ss.str("");
 					ss << "Message received was: " << packet;
 					printMessage(ss.str());
 					cout << ss.str() << endl;
-					if (atoi(packet) != udpPort) {
-						string temp = str[0];
-						int dest = atoi(temp.c_str());
-						if (dest != ownAddr) {
-							int next;
-							int port;
-							for (int i = 0; i < signed(finSPTable.size()); ++i) {
-								if (dest == finSPTable[i].dest) {
-									next = finSPTable[i].nextHop;
-									break;
-								}
+					int dest = stoi(str[0]);
+					if (dest != ownAddr) {
+						int next;
+						int port;
+						for (int i = 0; i < signed(finSPTable.size()); ++i) {
+							if (dest == finSPTable[i].dest) {
+								next = finSPTable[i].nextHop;
+								break;
 							}
-							for (int i = 0; i < signed(conTable.size()); ++i) {
-								if (next == conTable[i].dest) {
-									port = conTable[i].destUDP;
-									break;
-								}
+						}
+						for (int i = 0; i < signed(conTable.size()); ++i) {
+							if (next == conTable[i].dest) {
+								port = conTable[i].destUDP;
+								break;
 							}
-							//send message to router
-							ss.str("");
-							ss << "Packed is destined for Router " << dest
-							   << ", Next hop is Router "
-							   << next;
-							printMessage(ss.str());
+						}
+						//send message to router
+						ss.str("");
+						ss << "Packed is destined for Router " << dest
+						   << ", Next hop is Router "
+						   << next;
+						printMessage(ss.str());
 
-							memset(&packet, 0, sizeof(packet));
-							struct sockaddr_in neighborUdpSocket;
-							strcpy(packet, to_string(dest).c_str());
-							neighborUdpSocket.sin_family = AF_INET;
-							neighborUdpSocket.sin_addr.s_addr = INADDR_ANY;    //used INADDR_ANY because i think thats local addresses
-							neighborUdpSocket.sin_port = htons(port);
-							sendto(udpSocket, &packet, sizeof(packet), 0,
-								   (struct sockaddr *) &neighborUdpSocket,
-								   sizeof(neighborUdpSocket));
-						}else {
+						memset(&packet, 0, sizeof(packet));
+						struct sockaddr_in neighborUdpSocket;
+						strcpy(packet, to_string(dest).c_str());
+						neighborUdpSocket.sin_family = AF_INET;
+						neighborUdpSocket.sin_addr.s_addr = INADDR_ANY;    //used INADDR_ANY because i think thats local addresses
+						neighborUdpSocket.sin_port = htons(port);
+						sendto(udpSocket, &packet, sizeof(packet), 0,
+							   (struct sockaddr *) &neighborUdpSocket,
+							   sizeof(neighborUdpSocket));
+					} else {
 						sendMessageFinish();
-					}
 					}
 				}
 			}
@@ -369,7 +366,7 @@ void Router::sendMessageFinish() {
 	char routerInfo[100];
 	memset(&routerInfo, 0, sizeof(routerInfo));
 	stringstream lsFinish;
-	lsFinish << "Destination Router " << ownAddr << "has received the packet.";
+	lsFinish << "Destination Router " << ownAddr << " has received the packet.";
 	strcpy(routerInfo, lsFinish.str().c_str());
 	send(tcpSocket, &routerInfo, sizeof(routerInfo), 0);    //sends ready msg to manager
 }
