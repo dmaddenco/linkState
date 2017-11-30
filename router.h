@@ -109,6 +109,7 @@ public:
 	void sendDIJKSTRAFinish();
 	void sendQUITFinish();
 	void sendMessageFinish();
+	void shortestPath();
 
 };
 
