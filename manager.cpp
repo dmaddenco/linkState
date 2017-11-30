@@ -242,7 +242,7 @@ void Manager::establishConnection(int port) {
 					ss << "All routers are ready.";
 					printMessage(ss.str());
 					cout << ss.str() << endl;
-					for (int i = 0; i < routerTcpSockets.size(); ++i) {
+					for (int i = 0; i < signed(routerTcpSockets.size()); ++i) {
 						char msg[100];
 						ss.str("");
 						ss << "Sending START_LS_ACK";

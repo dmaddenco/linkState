@@ -215,8 +215,8 @@ void Router::shortestPath() {
 		//print to log file "reciving Node information from manager"
 		char packet[1000];
 		memset(&packet, 0, sizeof(packet));
-		char msg[1000];
-		memset(&msg, 0, sizeof(msg));
+//		char msg[1000];
+//		memset(&msg, 0, sizeof(msg));
 		FD_ZERO(&readfds);
 		FD_SET(udpSocket, &readfds);
 		FD_SET(tcpSocket, &readfds);
@@ -246,10 +246,9 @@ void Router::shortestPath() {
 				ss << "Message received was: " << packet;
 				printMessage(ss.str());
 				cout << ss.str() << endl;
-				string msg = packet;
 				vector <string> str;
 				str.clear();
-				boost::split(str, msg, boost::is_any_of(" "));
+				boost::split(str, packet, boost::is_any_of(" "));
 				if (str[0].compare("QUIT") == 0) {
 					sendQUITFinish();
 					ss.str("");
@@ -280,12 +279,13 @@ void Router::shortestPath() {
 						   << ", Next hop is Router "
 						   << next;
 						printMessage(ss.str());
-
+						memset(&packet, 0, sizeof(packet));
 						struct sockaddr_in neighborUdpSocket;
+						strcpy(packet, to_string(dest).c_str());
 						neighborUdpSocket.sin_family = AF_INET;
 						neighborUdpSocket.sin_addr.s_addr = INADDR_ANY;    //used INADDR_ANY because i think thats local addresses
 						neighborUdpSocket.sin_port = htons(port);
-						sendto(udpSocket, &msg, sizeof(msg), 0,
+						sendto(udpSocket, &packet, sizeof(packet), 0,
 							   (struct sockaddr *) &neighborUdpSocket,
 							   sizeof(neighborUdpSocket));
 					} else {
@@ -345,11 +345,13 @@ void Router::shortestPath() {
 							   << next;
 							printMessage(ss.str());
 
+							memset(&packet, 0, sizeof(packet));
 							struct sockaddr_in neighborUdpSocket;
+							strcpy(packet, to_string(dest).c_str());
 							neighborUdpSocket.sin_family = AF_INET;
 							neighborUdpSocket.sin_addr.s_addr = INADDR_ANY;    //used INADDR_ANY because i think thats local addresses
 							neighborUdpSocket.sin_port = htons(port);
-							sendto(udpSocket, &msg, sizeof(msg), 0,
+							sendto(udpSocket, &packet, sizeof(packet), 0,
 								   (struct sockaddr *) &neighborUdpSocket,
 								   sizeof(neighborUdpSocket));
 						}
