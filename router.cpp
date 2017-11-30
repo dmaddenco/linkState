@@ -354,7 +354,9 @@ void Router::shortestPath() {
 							sendto(udpSocket, &packet, sizeof(packet), 0,
 								   (struct sockaddr *) &neighborUdpSocket,
 								   sizeof(neighborUdpSocket));
-						}
+						}else {
+						sendMessageFinish();
+					}
 					}
 				}
 			}
