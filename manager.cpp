@@ -359,7 +359,7 @@ void Manager::establishConnection(int port) {
 										int recvd = -1;
 
 										cout << "here" << endl;
-										recvd = recv(translate(uniqRouters[i]), packet, sizeof(packet), 0);
+										recvd = recv(translate(wantedPaths[k].desireDest), packet, sizeof(packet), 0);
 										cout << "now here" << endl;
 
 										if (recvd < 0) {
