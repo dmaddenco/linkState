@@ -100,6 +100,7 @@ public:
 	void createUdpVector();
 	bool startLinkState(int expectedConTableSize);
 	void sendLSFinish();
+	void sendDIJKSTRAFinish();
 };
 
 #endif //LINKSTATE_ROUTER_H

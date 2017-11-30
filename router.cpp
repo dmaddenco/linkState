@@ -131,27 +131,38 @@ void Router::client() {
 					printMessage(ss.str());
 					if (startLinkState(stoi(string(str[1])))) {
 						sendLSFinish();
-						//testing input here
-						for (int i = 0; i < signed(conTable.size()); ++i) {
-							addEdge(conTable[i].src,conTable[i].dest,conTable[i].cost);
-						}
-						for(int i = 0; i < V; i++){
-							vector<SPT> temp = shortestPath(i);
-							for (int i = 0; i < signed(temp.size()); ++i) {
-								ShortPathTree.push_back(temp[i]);
-							}
 						
+						recvd = recv(tcpSocket, packet, sizeof(packet), 0);
+
+						if (recvd < 0) {
+							fprintf(stderr, "Issue with recv \n");
+							printf("errno %d", errno);
+							exit(EXIT_FAILURE);
 						}
-						printSPT(ownAddr);
-						
-						cout << "Following is the Shortest Path Forwarding Table for router " << ownAddr << "\n" << endl;
+
 						ss.str("");
-						for (int i = 0; i < signed(finSPTable.size()); ++i) {
-							
-							ss << "( " << finSPTable[i].dest << " , " << finSPTable[i].cost << " , " << finSPTable[i].nextHop << " )\n";
-						}
+						ss << "Message received was: " << packet;
+						printMessage(ss.str());
 						cout << ss.str() << endl;
-						//end of test area
+						msg = packet;
+						str.clear();
+						boost::split(str, msg, boost::is_any_of(" "));
+						if (str[0].compare("START_DIJKSTRA_ACK") == 0) {
+							ss.str("");
+							ss << "Starting LS Protocol";
+							printMessage(ss.str());
+							for (int i = 0; i < signed(conTable.size()); ++i) {
+								addEdge(conTable[i].src,conTable[i].dest,conTable[i].cost);
+							}
+							for(int i = 0; i < V; i++){
+								vector<SPT> temp = shortestPath(i);
+								for (int i = 0; i < signed(temp.size()); ++i) {
+									ShortPathTree.push_back(temp[i]);
+								}
+							}
+							printSPT(ownAddr);
+							sendDIJKSTRAFinish();
+						}
 					}
 				}
 				/*
@@ -186,6 +197,16 @@ void Router::client() {
 			}
 		}
 	}
+}
+
+void Router::sendDIJKSTRAFinish() {
+	printMessage("Finished DIJKSTRA, sending FINISH_DIJKSTRA_ACK");
+	char routerInfo[100];
+	memset(&routerInfo, 0, sizeof(routerInfo));
+	stringstream lsFinish;
+	lsFinish << "FINISH_DIJKSTRA_ACK " << ownAddr;
+	strcpy(routerInfo, lsFinish.str().c_str());
+	send(tcpSocket, &routerInfo, sizeof(routerInfo), 0);    //sends ready msg to manager
 }
 
 void Router::sendLSFinish() {
