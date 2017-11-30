@@ -107,6 +107,8 @@ public:
 	bool startLinkState(int expectedConTableSize);
 	void sendLSFinish();
 	void sendDIJKSTRAFinish();
+	void sendQUITFinish();
+
 };
 
 #endif //LINKSTATE_ROUTER_H
