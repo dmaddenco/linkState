@@ -409,9 +409,12 @@ void Manager::findPath() {
 							printMessage(ss.str());
 							cout << ss.str() << endl;
 
-//							if (to_string(packet).compare("Destination packet")) {
-//								received = true;
-//							}
+							vector <string> strs;
+							boost::split(strs, packet, boost::is_any_of(" "));
+							cout << strs[0] << endl;
+							if (strs[0].compare("Destination") == 0) {
+								received = true;
+							}
 						}
 					}
 				}
