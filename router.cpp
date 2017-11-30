@@ -131,8 +131,58 @@ void Router::client() {
 					printMessage(ss.str());
 					if (startLinkState(stoi(string(str[1])))) {
 						sendLSFinish();
+						//testing input here
+						for (int i = 0; i < signed(conTable.size()); ++i) {
+							addEdge(conTable[i].src,conTable[i].dest,conTable[i].cost);
+						}
+						for(int i = 0; i < V; i++){
+							vector<SPT> temp = shortestPath(i);
+							for (int i = 0; i < signed(temp.size()); ++i) {
+								ShortPathTree.push_back(temp[i]);
+							}
+						
+						}
+						printSPT(ownAddr);
+						
+						cout << "Following is the Shortest Path Forwarding Table for router " << ownAddr << "\n" << endl;
+						ss.str("");
+						for (int i = 0; i < signed(finSPTable.size()); ++i) {
+							
+							ss << "( " << finSPTable[i].dest << " , " << finSPTable[i].cost << " , " << finSPTable[i].nextHop << " )\n";
+						}
+						cout << ss.str() << endl;
+						//end of test area
 					}
 				}
+				/*
+				//ADD lines for dijkstras
+				recvd = recv(tcpSocket, packet, sizeof(packet), 0);
+
+				if (recvd < 0) {
+					fprintf(stderr, "Issue with recv \n");
+					printf("errno %d", errno);
+					exit(EXIT_FAILURE);
+				}
+
+				ss.str("");
+				ss << "Message received was: " << packet;
+				printMessage(ss.str());
+				//cout << ss.str() << endl;
+				msg = packet;
+				//vector <string> str; might fuck up
+				boost::split(str, msg, boost::is_any_of(" "));
+				if (str[0].compare("START_DIJK_ACK") == 0) { 
+					for (int i = 0; i < signed(conTable.size()); ++i) {
+						addEdge(conTable[i].src,conTable[i].dest,conTable[i].cost);
+					}
+					for(int i = 0; i < V; i++){
+						vector<SPT> temp = shortestPath(i);
+						for (int i = 0; i < signed(temp.size()); ++i) {
+							ShortPathTree.push_back(temp[i]);
+							}
+					printSPT(ownAddr);
+					}
+				}*/
 			}
 		}
 	}
@@ -351,6 +401,146 @@ void Router::createUdpVector() {
 	ss.str("");
 }
 
+/*class Graph
+{
+    int V;    // No. of vertices
+ 
+    // In a weighted graph, we need to store vertex 
+    // and weight pair for every edge
+    list< pair<int, int> > *adj;
+ 
+public:
+    Graph(int V);  // Constructor
+ 
+    // function to add an edge to graph
+    void addEdge(int u, int v, int w);
+ 
+    // prints shortest path from s
+    vector<SPT> shortestPath(int s);
+};*/
+ 
+// Allocates memory for adjacency list
+void Router::graph(int V){
+    this->V = V;
+    adj = new list< pair<int, int> >[V];
+}
+ 
+void Router::addEdge(int u, int v, int w){
+    adj[u].push_back(make_pair(v, w));
+    adj[v].push_back(make_pair(u, w));
+}
+
+void Router::printSPT(int ownAddr){
+		stringstream ss;
+		ss.str("");
+		//go through all shortest paths
+		for (int i = 0; i < signed(ShortPathTree.size()); ++i) {
+			spTable table;
+			//find the ones for the table you want
+			if (ShortPathTree[i].dest == ownAddr && ShortPathTree[i].hop == -1){
+				ss << "( " << ShortPathTree[i].dest << " , 0 , " << ShortPathTree[i].dest << " )\n";
+				table.dest = ShortPathTree[i].dest;
+				table.cost = 0;
+				table.nextHop = ShortPathTree[i].dest;
+				finSPTable.push_back(table);
+			}
+			else if (ShortPathTree[i].src == ownAddr){
+				ss << "( " << ShortPathTree[i].dest << " , ";
+				table.dest = ShortPathTree[i].dest;
+				for (int k = 0; k < signed(conTable.size()); ++k) { 
+					if ((conTable[k].src == ShortPathTree[i].src && conTable[k].dest == ShortPathTree[i].hop) || (conTable[k].dest == ShortPathTree[i].src && conTable[k].src == ShortPathTree[i].hop)){
+						ss << conTable[k].cost << " , ";
+						table.cost = conTable[k].cost;
+					}
+
+				}	
+				ss << ShortPathTree[i].hop << " )\n";
+				table.nextHop = ShortPathTree[i].hop;
+				finSPTable.push_back(table);
+			}
+			
+		}
+		printMessage(ss.str());
+		//cout << ss.str() << endl;
+		ss.str("");
+}
+
+// Prints shortest paths from src to all other vertices
+vector<SPT> Router::shortestPath(int src){
+	vector<SPT> nextHops;
+    // Create a set to store vertices that are being
+    // prerocessed
+    set< pair<int, int> > setds;
+	int parent[V];
+ 
+    // Create a vector for distances and initialize all
+    // distances as infinite (INF)
+    vector<int> dist(V, INF);
+ 
+    // Insert source itself in Set and initialize its
+    // distance as 0.
+    setds.insert(make_pair(0, src));
+    dist[src] = 0;
+ 
+    /* Looping till all shortest distance are finalized
+       then setds will become empty */
+    while (!setds.empty())
+    {
+        // The first vertex in Set is the minimum distance
+        // vertex, extract it from set.
+        pair<int, int> tmp = *(setds.begin());
+        setds.erase(setds.begin());
+ 
+        // vertex label is stored in second of pair (it
+        // has to be done this way to keep the vertices
+        // sorted distance (distance must be first item
+        // in pair)
+        int u = tmp.second;
+ 
+        // 'i' is used to get all adjacent vertices of a vertex
+        list< pair<int, int> >::iterator i;
+        for (i = adj[u].begin(); i != adj[u].end(); ++i)
+        {
+            // Get vertex label and weight of current adjacent
+            // of u.
+            int v = (*i).first;
+            int weight = (*i).second;
+ 
+            //  If there is shorter path to v through u.
+            if (dist[v] > dist[u] + weight)
+            {
+                /*  If distance of v is not INF then it must be in
+                    our set, so removing it and inserting again
+                    with updated less distance.  
+                    Note : We extract only those vertices from Set
+                    for which distance is finalized. So for them, 
+                    we would never reach here. */ 
+                if (dist[v] != INF)
+                    setds.erase(setds.find(make_pair(dist[v], v)));
+ 
+                // Updating distance of v
+                dist[v] = dist[u] + weight;
+				parent[v] = u;
+                setds.insert(make_pair(dist[v], v));
+            }
+        }
+    }
+ 
+    // Print shortest distances stored in dist[]
+    //printf("Vertex\t   Distance\tPath\n");
+    for (int i = 0; i < V; ++i){
+		SPT spt;
+			spt.src = i;
+			spt.dest = src;
+			spt.hop = parent[i];
+		if (i == src){spt.hop = -1;}
+		nextHops.push_back(spt);
+       // printf("%d \t\t %d\t\t%d\n", i, dist[i],parent[i]);
+	}
+
+	return nextHops;
+}
+
 int main(int argc, char *argv[]) {
 	ss.str("");
 	Router router;
@@ -365,6 +555,10 @@ int main(int argc, char *argv[]) {
 	ss << "Router: " << ownAddr;
 //	cout << ss << endl;
 	router.printMessage(ss.str());
+	
+	//int V = 10; //10 is just the number or routers to run it on
+	//Graph g(V);
+	router.graph(10); //need to find where we know how many routers there are and change number
 	router.client();    //call client with given port number
 
 }
