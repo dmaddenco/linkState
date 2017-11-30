@@ -45,7 +45,7 @@ void Manager::readFile(ifstream &inFile) {
 
 	}
 
-	while (getline(inFile, line)) {
+	while (getline(inFile, line) && line != "-1") {
 		vector <string> strs;
 		boost::split(strs, line, boost::is_any_of(" "));
 		Path path;
