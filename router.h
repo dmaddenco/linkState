@@ -50,10 +50,16 @@ struct Route {    //will be used for conTable construction
 	int destUDP;
 };
 
+struct Message {
+	char table[1000];
+	int srcUDP;
+};
+
 class Router {
 public:
 	vector <Route> conTable;
 	vector <Route> tempconTable;
+	vector <int> udpPorts;
 	string filename = "router";
 
 	void printMessage(string message);
@@ -66,6 +72,9 @@ public:
 	vector<Route> createConTable(string table);
 	string compressConTable();
 	void compare();
+	void createUdpVector();
+	bool startLinkState(int expectedConTableSize);
+	void sendLSFinish();
 };
 
 #endif //LINKSTATE_ROUTER_H
