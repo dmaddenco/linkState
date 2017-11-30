@@ -45,6 +45,22 @@ void Manager::readFile(ifstream &inFile) {
 
 	}
 
+	while (getline(inFile, line)) {
+		vector <string> strs;
+		boost::split(strs, line, boost::is_any_of(" "));
+		Path path;
+
+		int src = stoi(strs[0]);
+		int dest = stoi(strs[1]);
+
+		path.src = src;
+		path.desireDest = dest;
+
+		wantedPaths.push_back(path);
+
+	}
+	cout << wantedPaths.size() << endl;
+
 	createPorts(numRouters);
 }
 
