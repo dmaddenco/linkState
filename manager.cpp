@@ -339,7 +339,7 @@ void Manager::establishConnection(int port) {
 						}
 					}//finsih DIJKSTRA while loop
 					printMessage("START METHOD: findPath()");
-					while (1) {
+					//while (1) {
 						for (int k = 0; k < signed(wantedPaths.size()); ++k) {
 							for (int i = 0; i < signed(uniqRouters.size()); ++i) {
 								if (uniqRouters[i] == wantedPaths[k].src) {
@@ -381,8 +381,56 @@ void Manager::establishConnection(int port) {
 									}
 								}
 							}
+						} //finish sending messages
+					for (int i = 0; i < signed(routerTcpSockets.size()); ++i) {
+						char msg[100];
+						memset(&msg, 0, sizeof(msg));
+						ss.str("");
+						ss << "QUIT";
+						printMessage(ss.str());
+						ss.str("");
+						ss << "QUIT";
+						strcpy(msg, ss.str().c_str());
+						send(routerTcpSockets[i], &msg, sizeof(msg), 0);
+					}
+					lsDone = false;
+					responses.clear();
+					while (!lsDone) {
+						for (int i = 0; i < signed(routerTcpSockets.size()); ++i) {
+							memset(&packet, 0, sizeof(packet));
+							recvd = recv(routerTcpSockets[i], packet, sizeof(packet), 0);
+
+							if (recvd < 0) {
+								fprintf(stderr, "Issue with recv \n");
+								printf("errno %d", errno);
+								exit(EXIT_FAILURE);
+							}
+
+							vector <string> r;
+							boost::split(r, packet, boost::is_any_of(" "));
+
+							stringstream ss;
+							ss << "Message received was: " << r[0] << " from Router: " << r[1];
+							printMessage(ss.str());
+							cout << ss.str() << endl;
+							bool contains = false;
+							int router = stoi(r[1]);
+							for (int j = 0; j < signed(responses.size()); ++j) {
+								if (router == responses[j]) {
+									contains = true;
+								}
+							}
+							if (!contains) {
+								responses.push_back(router);
+							}
+							if (responses.size() == uniqRouters.size()) {
+								printMessage("All routers have QUIT");
+								lsDone = true;
+								//dijk = true;
+							}
 						}
 					}
+					//}
 				}
 			}
 		}
