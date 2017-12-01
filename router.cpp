@@ -61,7 +61,7 @@ void Router::client() {
 		exit(EXIT_FAILURE);
 	}
 
-	cout << "Connecting to server..." << endl;
+	//cout << "Connecting to server..." << endl;
 	printMessage("CONNECTING TO SERVER THROUGH TCP PORT");
 
 	if (connect(tcpSocket, (struct sockaddr *) &ServAddr, sizeof(ServAddr)) < 0) {
@@ -71,7 +71,7 @@ void Router::client() {
 		exit(EXIT_FAILURE);
 	}
 
-	cout << "Connected on port: " << tcpPort << endl;
+	//cout << "Connected on port: " << tcpPort << endl;
 	ss.str("");
 	ss << "Connected to Manager on TCP Port: " << tcpPort;
 	printMessage(ss.str());
@@ -138,7 +138,7 @@ void Router::client() {
 					printMessage(ss.str());
 					if (startLinkState(stoi(string(str[1])))) {
 						sendLSFinish(); //finish LS wait to start DIJKSTRA
-						
+
 						recvd = recv(tcpSocket, packet, sizeof(packet), 0);
 
 						if (recvd < 0) {
@@ -150,7 +150,7 @@ void Router::client() {
 						ss.str("");
 						ss << "Message received was: " << packet;
 						printMessage(ss.str());
-						cout << ss.str() << endl;
+						//cout << ss.str() << endl;
 						msg = packet;
 						str.clear();
 						boost::split(str, msg, boost::is_any_of(" "));
@@ -159,78 +159,17 @@ void Router::client() {
 							ss << "Starting LS Protocol";
 							printMessage(ss.str());
 							for (int i = 0; i < signed(conTable.size()); ++i) {
-								addEdge(conTable[i].src,conTable[i].dest,conTable[i].cost);
+								addEdge(conTable[i].src, conTable[i].dest, conTable[i].cost);
 							}
-							for(int i = 0; i < V; i++){
-								vector<SPT> temp = shortestPath(i);
+							for (int i = 0; i < V; i++) {
+								vector <SPT> temp = shortestPath(i);
 								for (int i = 0; i < signed(temp.size()); ++i) {
 									ShortPathTree.push_back(temp[i]);
 								}
 							}
 							printSPT(ownAddr);
 							sendDIJKSTRAFinish(); //finish DIJKSTRA wait to start traffic
-						
-							bool done = false;
-							
-							while(!done){
-								//print to log file "reciving Node information from manager"
-								ss.str("");
-								ss << "reciving Node information from manager";
-								printMessage(ss.str());
-								recvd = recv(tcpSocket, packet, sizeof(packet), 0);
-
-								if (recvd < 0) {
-									fprintf(stderr, "Issue with recv \n");
-									printf("errno %d", errno);
-									exit(EXIT_FAILURE);
-								}
-
-								ss.str("");
-								ss << "Message received was: " << packet;
-								printMessage(ss.str());
-								cout << ss.str() << endl;
-								msg = packet;
-								str.clear();
-								boost::split(str, msg, boost::is_any_of(" "));
-								if (str[0].compare("QUIT") == 0) {
-									sendQUITFinish();
-									ss.str("");
-									ss << "Router " << ownAddr << " sutting down, Goodbye!";
-									printMessage(ss.str());
-									done = true;
-								}
-								else{
-									//send to next place 
-									int dest = stoi(str[0]);
-									if (dest != ownAddr){
-									int next;
-									int port;
-									for (int i = 0; i < signed(finSPTable.size()); ++i) {
-										if (dest == finSPTable[i].dest){next = finSPTable[i].nextHop;}
-									}
-									for (int i = 0; i < signed(conTable.size()); ++i) {
-										if (next == conTable[i].dest){
-											port = conTable[i].destUDP;
-											break;
-										}
-									}
-									//send message to router
-									ss.str("");
-									ss << "Packed is destined for Router " << dest << ", Next hop is Router " << next;
-									printMessage(ss.str());
-
-									struct sockaddr_in neighborUdpSocket;
-									neighborUdpSocket.sin_family = AF_INET;
-									neighborUdpSocket.sin_addr.s_addr = INADDR_ANY;    //used INADDR_ANY because i think thats local addresses
-									neighborUdpSocket.sin_port = htons(port);
-									sendto(udpSocket, &msg, sizeof(msg), 0, (struct sockaddr *) &neighborUdpSocket,
-									sizeof(neighborUdpSocket));
-									}
-									else{
-										sendMessageFinish();
-									}
-								}
-							}
+							shortestPath();
 						}
 					}
 				}
@@ -268,15 +207,188 @@ void Router::client() {
 	}
 }
 
+void Router::shortestPath() {
+	fd_set readfds;    // master file descriptor list
+//	int sd, n, sv;
+	int n, sv;
+	while (1) {
+		//print to log file "reciving Node information from manager"
+		char packet[1000];
+		memset(&packet, 0, sizeof(packet));
+//		char msg[1000];
+//		memset(&msg, 0, sizeof(msg));
+		FD_ZERO(&readfds);
+		FD_SET(udpSocket, &readfds);
+		FD_SET(tcpSocket, &readfds);
+
+		n = udpSocket + 1;
+		sv = select(n, &readfds, NULL, NULL, NULL);
+
+		if (sv == -1) {
+			perror("select");
+		} else {
+			// one or both of the descriptors have data
+			if (FD_ISSET(tcpSocket, &readfds)) {
+				int recvd = -1;
+
+				ss.str("");
+				ss << "receiving Node information from manager";
+				printMessage(ss.str());
+				recvd = recv(tcpSocket, packet, sizeof(packet), 0);
+
+				if (recvd < 0) {
+					fprintf(stderr, "Issue with recv \n");
+					printf("errno %d", errno);
+					exit(EXIT_FAILURE);
+				}
+
+				ss.str("");
+				ss << "TCP Message received was: " << packet;
+				printMessage(ss.str());
+				//cout << ss.str() << endl;
+				vector <string> str;
+				str.clear();
+				boost::split(str, packet, boost::is_any_of(" "));
+				if (str[0].compare("QUIT") == 0) {
+					sendQUITFinish();
+					ss.str("");
+					ss << "Router " << ownAddr << " sutting down, Goodbye!";
+					printMessage(ss.str());
+//					done = true;
+				} else {
+					//send to next place
+					int dest = stoi(str[0]);
+					if (dest != ownAddr) {
+						int next;
+						int port;
+						for (int i = 0; i < signed(finSPTable.size()); ++i) {
+							if (dest == finSPTable[i].dest) {
+								next = finSPTable[i].nextHop;
+								break;
+							}
+						}
+						for (int i = 0; i < signed(conTable.size()); ++i) {
+//							cout << conTable[i].dest << endl;
+							if (next == conTable[i].dest) {
+								port = conTable[i].destUDP;
+								break;
+							}
+						}
+						for (int j = 0; j < signed(messages.size()); ++j) {
+							if (next == messages[j].srcRouter) {
+								port = messages[j].srcUDP;
+								break;
+							}
+						}
+						//send message to router
+						ss.str("");
+						ss << "Packed is destined for Router " << dest
+						   << ", Next hop is Router "
+						   << next;
+						printMessage(ss.str());
+						
+						//cout << "REC FROM TCP -- SENDING TO " << next << " ON PORT " << port << endl; 
+
+						memset(&packet, 0, sizeof(packet));
+						struct sockaddr_in neighborUdpSocket;
+						strcpy(packet, to_string(dest).c_str());
+						neighborUdpSocket.sin_family = AF_INET;
+						neighborUdpSocket.sin_addr.s_addr = INADDR_ANY;    //used INADDR_ANY because i think thats local addresses
+						neighborUdpSocket.sin_port = htons(port);
+						sendto(udpSocket, &packet, sizeof(packet), 0,
+							   (struct sockaddr *) &neighborUdpSocket,
+							   sizeof(neighborUdpSocket));
+					} else {
+						sendMessageFinish();
+					}
+				}
+			}
+			if (FD_ISSET(udpSocket, &readfds)) {
+				int recvd = -1;
+
+//				ss.str("");
+//				ss << "receiving information from router";
+//				printMessage(ss.str());
+				recvd = recv(udpSocket, packet, sizeof(packet), 0);
+
+				if (recvd < 0) {
+					fprintf(stderr, "Issue with recv \n");
+					printf("errno %d", errno);
+					exit(EXIT_FAILURE);
+				}
+				vector <string> str;
+				boost::split(str, packet, boost::is_any_of(" "));
+				if (str.size() > 1) {
+					ss.str("");
+					ss << "Limited Broadcast Data. UDP Packet dropped: " << packet;
+					printMessage(ss.str());
+				} else {
+					ss.str("");
+					ss << "Receiving information from router";
+					printMessage(ss.str());
+					ss.str("");
+					ss << "UDP Message received was: " << packet;
+					printMessage(ss.str());
+					//cout << ss.str() << endl;
+					int dest = stoi(str[0]);
+					if (dest != ownAddr) {
+						int next;
+						int port;
+						for (int i = 0; i < signed(finSPTable.size()); ++i) {
+							if (dest == finSPTable[i].dest) {
+								next = finSPTable[i].nextHop;
+								break;
+							}
+						}
+						for (int i = 0; i < signed(conTable.size()); ++i) {
+							if (next == conTable[i].dest) {
+								port = conTable[i].destUDP;
+								break;
+							}
+						}
+						for (int j = 0; j < signed(messages.size()); ++j) {
+							if (next == messages[j].srcRouter) {
+								port = messages[j].srcUDP;
+								break;
+							}
+						}
+						//send message to router
+						ss.str("");
+						ss << "Packed is destined for Router " << dest
+						   << ", Next hop is Router "
+						   << next;
+						printMessage(ss.str());
+						
+						//cout << "UDP REC -- SENDING TO " << next << " ON PORT " << port << endl; 
+
+						memset(&packet, 0, sizeof(packet));
+						struct sockaddr_in neighborUdpSocket;
+						strcpy(packet, to_string(dest).c_str());
+						neighborUdpSocket.sin_family = AF_INET;
+						neighborUdpSocket.sin_addr.s_addr = INADDR_ANY;    //used INADDR_ANY because i think thats local addresses
+						neighborUdpSocket.sin_port = htons(port);
+						sendto(udpSocket, &packet, sizeof(packet), 0,
+							   (struct sockaddr *) &neighborUdpSocket,
+							   sizeof(neighborUdpSocket));
+					} else {
+						sendMessageFinish();
+					}
+				}
+			}
+		}
+	}
+}
+
 void Router::sendMessageFinish() {
 	printMessage("Message reached destination, sending Message_ACK");
 	char routerInfo[100];
 	memset(&routerInfo, 0, sizeof(routerInfo));
 	stringstream lsFinish;
-	lsFinish << "Destination Router " << ownAddr << "has received the packet.";
+	lsFinish << "Destination Router " << ownAddr << " has received the packet.";
 	strcpy(routerInfo, lsFinish.str().c_str());
 	send(tcpSocket, &routerInfo, sizeof(routerInfo), 0);    //sends ready msg to manager
 }
+
 void Router::sendQUITFinish() {
 	printMessage("Finished traffic, sending QUIT_ACK");
 	char routerInfo[100];
@@ -321,6 +433,7 @@ bool Router::startLinkState(int expectedConTableSize) {
 		sockets.push_back(neighborUdpSocket);
 		Message message;
 		message.srcUDP = udpPort;
+		message.srcRouter = ownAddr;
 		strcpy(message.table, compressConTable().c_str());
 		string table = compressConTable();
 		strcpy(msg, table.c_str());
@@ -368,6 +481,7 @@ bool Router::startLinkState(int expectedConTableSize) {
 				tempconTable = createConTable(message.table);
 				compare();
 				int src = message.srcUDP;
+				messages.push_back(message);
 				bool exists = false;
 				for (int j = 0; j < signed(udpPorts.size()); ++j) {
 					if (src == udpPorts[j]) {
@@ -399,7 +513,17 @@ bool Router::startLinkState(int expectedConTableSize) {
 	ss.str("");
 	ss << "Table is now complete.";
 	printMessage(ss.str());
+	printConTable();
 	return true;
+}
+void Router::printConTable(){
+	ss.str("");
+	ss << "Final Routing Table\n";
+	ss << "Source\tDestination\tCost\tDestPort\n";
+	for (int i = 0; i < signed(conTable.size()); ++i) {
+	ss << "\t" <<conTable[i].src << "\t\t" << conTable[i].dest << "\t\t" << conTable[i].cost << "\t\t" << conTable[i].destUDP << "\n";
+	}
+	printMessage(ss.str());
 }
 
 void Router::printMessage(string message) {
@@ -528,124 +652,125 @@ public:
     // prints shortest path from s
     vector<SPT> shortestPath(int s);
 };*/
- 
+
 // Allocates memory for adjacency list
-void Router::graph(int V){
-    this->V = V;
-    adj = new list< pair<int, int> >[V];
-}
- 
-void Router::addEdge(int u, int v, int w){
-    adj[u].push_back(make_pair(v, w));
-    adj[v].push_back(make_pair(u, w));
+void Router::graph(int V) {
+	this->V = V;
+	adj = new list <pair<int, int>>[V];
 }
 
-void Router::printSPT(int ownAddr){
-		stringstream ss;
-		ss.str("");
-		//go through all shortest paths
-		for (int i = 0; i < signed(ShortPathTree.size()); ++i) {
-			spTable table;
-			//find the ones for the table you want
-			if (ShortPathTree[i].dest == ownAddr && ShortPathTree[i].hop == -1){
-				ss << "( " << ShortPathTree[i].dest << " , 0 , " << ShortPathTree[i].dest << " )\n";
-				table.dest = ShortPathTree[i].dest;
-				table.cost = 0;
-				table.nextHop = ShortPathTree[i].dest;
-				finSPTable.push_back(table);
-			}
-			else if (ShortPathTree[i].src == ownAddr){
-				ss << "( " << ShortPathTree[i].dest << " , ";
-				table.dest = ShortPathTree[i].dest;
-				for (int k = 0; k < signed(conTable.size()); ++k) { 
-					if ((conTable[k].src == ShortPathTree[i].src && conTable[k].dest == ShortPathTree[i].hop) || (conTable[k].dest == ShortPathTree[i].src && conTable[k].src == ShortPathTree[i].hop)){
-						ss << conTable[k].cost << " , ";
-						table.cost = conTable[k].cost;
-					}
+void Router::addEdge(int u, int v, int w) {
+	adj[u].push_back(make_pair(v, w));
+	adj[v].push_back(make_pair(u, w));
+}
 
-				}	
-				ss << ShortPathTree[i].hop << " )\n";
-				table.nextHop = ShortPathTree[i].hop;
-				finSPTable.push_back(table);
+void Router::printSPT(int ownAddr) {
+	stringstream ss;
+	ss.str("");
+	ss << "Following is the Shortest Path Forwarding Table.\n";
+	//printMessage(ss.str());
+	//ss.str("");
+	//go through all shortest paths
+	for (int i = 0; i < signed(ShortPathTree.size()); ++i) {
+		spTable table;
+		//find the ones for the table you want
+		if (ShortPathTree[i].dest == ownAddr && ShortPathTree[i].hop == -1) {
+			ss << "( " << ShortPathTree[i].dest << " , 0 , " << ShortPathTree[i].dest << " )\n";
+			table.dest = ShortPathTree[i].dest;
+			table.cost = 0;
+			table.nextHop = ShortPathTree[i].dest;
+			finSPTable.push_back(table);
+		} else if (ShortPathTree[i].src == ownAddr) {
+			ss << "( " << ShortPathTree[i].dest << " , ";
+			table.dest = ShortPathTree[i].dest;
+			for (int k = 0; k < signed(conTable.size()); ++k) {
+				if ((conTable[k].src == ShortPathTree[i].src && conTable[k].dest == ShortPathTree[i].hop) ||
+					(conTable[k].dest == ShortPathTree[i].src && conTable[k].src == ShortPathTree[i].hop)) {
+					ss << conTable[k].cost << " , ";
+					table.cost = conTable[k].cost;
+				}
+
 			}
-			
+			ss << ShortPathTree[i].hop << " )\n";
+			table.nextHop = ShortPathTree[i].hop;
+			finSPTable.push_back(table);
 		}
-		printMessage(ss.str());
-		//cout << ss.str() << endl;
-		ss.str("");
+
+	}
+	printMessage(ss.str());
+	//cout << ss.str() << endl;
+	ss.str("");
 }
 
 // Prints shortest paths from src to all other vertices
-vector<SPT> Router::shortestPath(int src){
-	vector<SPT> nextHops;
-    // Create a set to store vertices that are being
-    // prerocessed
-    set< pair<int, int> > setds;
+vector <SPT> Router::shortestPath(int src) {
+	vector <SPT> nextHops;
+	// Create a set to store vertices that are being
+	// prerocessed
+	set <pair<int, int>> setds;
 	int parent[V];
- 
-    // Create a vector for distances and initialize all
-    // distances as infinite (INF)
-    vector<int> dist(V, INF);
- 
-    // Insert source itself in Set and initialize its
-    // distance as 0.
-    setds.insert(make_pair(0, src));
-    dist[src] = 0;
- 
-    /* Looping till all shortest distance are finalized
-       then setds will become empty */
-    while (!setds.empty())
-    {
-        // The first vertex in Set is the minimum distance
-        // vertex, extract it from set.
-        pair<int, int> tmp = *(setds.begin());
-        setds.erase(setds.begin());
- 
-        // vertex label is stored in second of pair (it
-        // has to be done this way to keep the vertices
-        // sorted distance (distance must be first item
-        // in pair)
-        int u = tmp.second;
- 
-        // 'i' is used to get all adjacent vertices of a vertex
-        list< pair<int, int> >::iterator i;
-        for (i = adj[u].begin(); i != adj[u].end(); ++i)
-        {
-            // Get vertex label and weight of current adjacent
-            // of u.
-            int v = (*i).first;
-            int weight = (*i).second;
- 
-            //  If there is shorter path to v through u.
-            if (dist[v] > dist[u] + weight)
-            {
-                /*  If distance of v is not INF then it must be in
-                    our set, so removing it and inserting again
-                    with updated less distance.  
-                    Note : We extract only those vertices from Set
-                    for which distance is finalized. So for them, 
-                    we would never reach here. */ 
-                if (dist[v] != INF)
-                    setds.erase(setds.find(make_pair(dist[v], v)));
- 
-                // Updating distance of v
-                dist[v] = dist[u] + weight;
+
+	// Create a vector for distances and initialize all
+	// distances as infinite (INF)
+	vector<int> dist(V, INF);
+
+	// Insert source itself in Set and initialize its
+	// distance as 0.
+	setds.insert(make_pair(0, src));
+	dist[src] = 0;
+
+	/* Looping till all shortest distance are finalized
+	   then setds will become empty */
+	while (!setds.empty()) {
+		// The first vertex in Set is the minimum distance
+		// vertex, extract it from set.
+		pair<int, int> tmp = *(setds.begin());
+		setds.erase(setds.begin());
+
+		// vertex label is stored in second of pair (it
+		// has to be done this way to keep the vertices
+		// sorted distance (distance must be first item
+		// in pair)
+		int u = tmp.second;
+
+		// 'i' is used to get all adjacent vertices of a vertex
+		list < pair < int, int > > ::iterator
+		i;
+		for (i = adj[u].begin(); i != adj[u].end(); ++i) {
+			// Get vertex label and weight of current adjacent
+			// of u.
+			int v = (*i).first;
+			int weight = (*i).second;
+
+			//  If there is shorter path to v through u.
+			if (dist[v] > dist[u] + weight) {
+				/*  If distance of v is not INF then it must be in
+					our set, so removing it and inserting again
+					with updated less distance.
+					Note : We extract only those vertices from Set
+					for which distance is finalized. So for them,
+					we would never reach here. */
+				if (dist[v] != INF)
+					setds.erase(setds.find(make_pair(dist[v], v)));
+
+				// Updating distance of v
+				dist[v] = dist[u] + weight;
 				parent[v] = u;
-                setds.insert(make_pair(dist[v], v));
-            }
-        }
-    }
- 
-    // Print shortest distances stored in dist[]
-    //printf("Vertex\t   Distance\tPath\n");
-    for (int i = 0; i < V; ++i){
+				setds.insert(make_pair(dist[v], v));
+			}
+		}
+	}
+
+	// Print shortest distances stored in dist[]
+	//printf("Vertex\t   Distance\tPath\n");
+	for (int i = 0; i < V; ++i) {
 		SPT spt;
-			spt.src = i;
-			spt.dest = src;
-			spt.hop = parent[i];
-		if (i == src){spt.hop = -1;}
+		spt.src = i;
+		spt.dest = src;
+		spt.hop = parent[i];
+		if (i == src) { spt.hop = -1; }
 		nextHops.push_back(spt);
-       // printf("%d \t\t %d\t\t%d\n", i, dist[i],parent[i]);
+		// printf("%d \t\t %d\t\t%d\n", i, dist[i],parent[i]);
 	}
 
 	return nextHops;
@@ -665,7 +790,7 @@ int main(int argc, char *argv[]) {
 	ss << "Router: " << ownAddr;
 //	cout << ss << endl;
 	router.printMessage(ss.str());
-	
+
 	//int V = 10; //10 is just the number or routers to run it on
 	//Graph g(V);
 	//router.graph(10); //need to find where we know how many routers there are and change number
