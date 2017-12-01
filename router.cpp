@@ -243,7 +243,7 @@ void Router::shortestPath() {
 				}
 
 				ss.str("");
-				ss << "Message received was: " << packet;
+				ss << "TCP Message received was: " << packet;
 				printMessage(ss.str());
 				cout << ss.str() << endl;
 				vector <string> str;
@@ -268,8 +268,15 @@ void Router::shortestPath() {
 							}
 						}
 						for (int i = 0; i < signed(conTable.size()); ++i) {
+//							cout << conTable[i].dest << endl;
 							if (next == conTable[i].dest) {
 								port = conTable[i].destUDP;
+								break;
+							}
+						}
+						for (int j = 0; j < signed(messages.size()); ++j) {
+							if (next == messages[j].srcRouter) {
+								port = messages[j].srcUDP;
 								break;
 							}
 						}
@@ -320,7 +327,7 @@ void Router::shortestPath() {
 					ss << "Receiving information from router";
 					printMessage(ss.str());
 					ss.str("");
-					ss << "Message received was: " << packet;
+					ss << "UDP Message received was: " << packet;
 					printMessage(ss.str());
 					cout << ss.str() << endl;
 					int dest = stoi(str[0]);
@@ -336,6 +343,12 @@ void Router::shortestPath() {
 						for (int i = 0; i < signed(conTable.size()); ++i) {
 							if (next == conTable[i].dest) {
 								port = conTable[i].destUDP;
+								break;
+							}
+						}
+						for (int j = 0; j < signed(messages.size()); ++j) {
+							if (next == messages[j].srcRouter) {
+								port = messages[j].srcUDP;
 								break;
 							}
 						}
@@ -420,6 +433,7 @@ bool Router::startLinkState(int expectedConTableSize) {
 		sockets.push_back(neighborUdpSocket);
 		Message message;
 		message.srcUDP = udpPort;
+		message.srcRouter = ownAddr;
 		strcpy(message.table, compressConTable().c_str());
 		string table = compressConTable();
 		strcpy(msg, table.c_str());
@@ -467,6 +481,7 @@ bool Router::startLinkState(int expectedConTableSize) {
 				tempconTable = createConTable(message.table);
 				compare();
 				int src = message.srcUDP;
+				messages.push_back(message);
 				bool exists = false;
 				for (int j = 0; j < signed(udpPorts.size()); ++j) {
 					if (src == udpPorts[j]) {

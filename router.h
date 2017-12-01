@@ -57,6 +57,7 @@ struct Route {    //will be used for conTable construction
 struct Message {
 	char table[1000];
 	int srcUDP;
+	int srcRouter;
 };
 
 struct SPT {    //Used to store hop info after Djikstras
@@ -83,6 +84,7 @@ public:
 	vector <Route> tempconTable;
 	vector <int> udpPorts;
 	string filename = "router";
+	vector <Message> messages;
 
 	void printMessage(string message);
 

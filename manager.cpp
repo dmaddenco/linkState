@@ -358,9 +358,9 @@ void Manager::establishConnection(int port) {
 										memset(&packet, 0, sizeof(packet));
 										int recvd = -1;
 
-										cout << "here" << endl;
+//										cout << "here" << endl;
 										recvd = recv(translate(wantedPaths[k].desireDest), packet, sizeof(packet), 0);
-										cout << "now here" << endl;
+//										cout << "now here" << endl;
 
 										if (recvd < 0) {
 											fprintf(stderr, "Issue with recv \n");
