@@ -279,6 +279,9 @@ void Router::shortestPath() {
 						   << ", Next hop is Router "
 						   << next;
 						printMessage(ss.str());
+						
+						cout << "REC FROM TCP -- SENDING TO " << next << " ON PORT " << port << endl; 
+
 						memset(&packet, 0, sizeof(packet));
 						struct sockaddr_in neighborUdpSocket;
 						strcpy(packet, to_string(dest).c_str());
@@ -342,6 +345,8 @@ void Router::shortestPath() {
 						   << ", Next hop is Router "
 						   << next;
 						printMessage(ss.str());
+						
+						cout << "UDP REC -- SENDING TO " << next << " ON PORT " << port << endl; 
 
 						memset(&packet, 0, sizeof(packet));
 						struct sockaddr_in neighborUdpSocket;
