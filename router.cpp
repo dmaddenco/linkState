@@ -252,7 +252,7 @@ void Router::shortestPath() {
 				if (str[0].compare("QUIT") == 0) {
 					sendQUITFinish();
 					ss.str("");
-					ss << "Router " << ownAddr << " sutting down, Goodbye!";
+					ss << "Router " << ownAddr << " shutting down, Goodbye!";
 					printMessage(ss.str());
 //					done = true;
 				} else {
