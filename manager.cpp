@@ -386,7 +386,7 @@ void Manager::establishConnection(int port) {
 						char msg[100];
 						memset(&msg, 0, sizeof(msg));
 						ss.str("");
-						ss << "QUIT Router " << routerTcpSockets[i];
+						ss << "Sending QUIT to router";
 						printMessage(ss.str());
 						ss.str("");
 						ss << "QUIT";
