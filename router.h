@@ -112,6 +112,7 @@ public:
 	void sendQUITFinish();
 	void sendMessageFinish();
 	void shortestPath();
+	void printConTable();
 
 };
 

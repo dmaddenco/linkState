@@ -61,7 +61,7 @@ void Router::client() {
 		exit(EXIT_FAILURE);
 	}
 
-	cout << "Connecting to server..." << endl;
+	//cout << "Connecting to server..." << endl;
 	printMessage("CONNECTING TO SERVER THROUGH TCP PORT");
 
 	if (connect(tcpSocket, (struct sockaddr *) &ServAddr, sizeof(ServAddr)) < 0) {
@@ -71,7 +71,7 @@ void Router::client() {
 		exit(EXIT_FAILURE);
 	}
 
-	cout << "Connected on port: " << tcpPort << endl;
+	//cout << "Connected on port: " << tcpPort << endl;
 	ss.str("");
 	ss << "Connected to Manager on TCP Port: " << tcpPort;
 	printMessage(ss.str());
@@ -150,7 +150,7 @@ void Router::client() {
 						ss.str("");
 						ss << "Message received was: " << packet;
 						printMessage(ss.str());
-						cout << ss.str() << endl;
+						//cout << ss.str() << endl;
 						msg = packet;
 						str.clear();
 						boost::split(str, msg, boost::is_any_of(" "));
@@ -245,7 +245,7 @@ void Router::shortestPath() {
 				ss.str("");
 				ss << "TCP Message received was: " << packet;
 				printMessage(ss.str());
-				cout << ss.str() << endl;
+				//cout << ss.str() << endl;
 				vector <string> str;
 				str.clear();
 				boost::split(str, packet, boost::is_any_of(" "));
@@ -287,7 +287,7 @@ void Router::shortestPath() {
 						   << next;
 						printMessage(ss.str());
 						
-						cout << "REC FROM TCP -- SENDING TO " << next << " ON PORT " << port << endl; 
+						//cout << "REC FROM TCP -- SENDING TO " << next << " ON PORT " << port << endl; 
 
 						memset(&packet, 0, sizeof(packet));
 						struct sockaddr_in neighborUdpSocket;
@@ -329,7 +329,7 @@ void Router::shortestPath() {
 					ss.str("");
 					ss << "UDP Message received was: " << packet;
 					printMessage(ss.str());
-					cout << ss.str() << endl;
+					//cout << ss.str() << endl;
 					int dest = stoi(str[0]);
 					if (dest != ownAddr) {
 						int next;
@@ -359,7 +359,7 @@ void Router::shortestPath() {
 						   << next;
 						printMessage(ss.str());
 						
-						cout << "UDP REC -- SENDING TO " << next << " ON PORT " << port << endl; 
+						//cout << "UDP REC -- SENDING TO " << next << " ON PORT " << port << endl; 
 
 						memset(&packet, 0, sizeof(packet));
 						struct sockaddr_in neighborUdpSocket;
@@ -513,7 +513,17 @@ bool Router::startLinkState(int expectedConTableSize) {
 	ss.str("");
 	ss << "Table is now complete.";
 	printMessage(ss.str());
+	printConTable();
 	return true;
+}
+void Router::printConTable(){
+	ss.str("");
+	ss << "Final Routing Table\n";
+	ss << "Source\tDestination\tCost\tDestPort\n";
+	for (int i = 0; i < signed(conTable.size()); ++i) {
+	ss << "\t" <<conTable[i].src << "\t\t" << conTable[i].dest << "\t\t" << conTable[i].cost << "\t\t" << conTable[i].destUDP << "\n";
+	}
+	printMessage(ss.str());
 }
 
 void Router::printMessage(string message) {
@@ -657,6 +667,9 @@ void Router::addEdge(int u, int v, int w) {
 void Router::printSPT(int ownAddr) {
 	stringstream ss;
 	ss.str("");
+	ss << "Following is the Shortest Path Forwarding Table.\n";
+	//printMessage(ss.str());
+	//ss.str("");
 	//go through all shortest paths
 	for (int i = 0; i < signed(ShortPathTree.size()); ++i) {
 		spTable table;
